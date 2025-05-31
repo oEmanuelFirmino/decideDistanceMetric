@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explorador de Métricas de Distância Interativas</title>
+    <link
+      rel="shortcut icon"
+      href="ruler-svgrepo-com.svg"
+      type="image/x-icon"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      /* Basic styling for links, can be refined */
+      .metric-link-item {
+        @apply bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow;
+      }
+      .metric-link-title {
+        @apply text-xl font-semibold text-teal-600 mb-2;
+      }
+      .metric-link-description {
+        @apply text-sm text-slate-600;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-10">
+        <h1 class="text-5xl font-bold text-teal-700">
+          📏 Explorador de Métricas de Distância Interativas 📏
+        </h1>
+      </header>
+
+      <!-- Navigation placeholder - will be added in the next step -->
+      <div class="bg-teal-600 text-white shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center">
+              <a
+                href="index.html"
+                class="text-xl font-bold hover:text-teal-200 transition-colors"
+                >Página Inicial</a
+              >
+            </div>
+            <div class="relative">
+              <button
+                id="metrics-menu-button"
+                class="px-3 py-2 rounded-md text-sm font-medium hover:bg-teal-700 focus:outline-none focus:bg-teal-700 transition-colors"
+              >
+                Métricas de Distância <span class="ml-1">&#9662;</span>
+              </button>
+              <div
+                id="metrics-dropdown"
+                class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none py-1 z-50"
+              >
+                <a
+                  href="chebyshevDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Chebyshev</a
+                >
+                <a
+                  href="correlationDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Correlação</a
+                >
+                <a
+                  href="cosineDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. Cosseno</a
+                >
+                <a
+                  href="diceDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. Dice</a
+                >
+                <a
+                  href="euclidianDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. Euclidiana</a
+                >
+                <a
+                  href="hammingDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Hamming</a
+                >
+                <a
+                  href="hellingerDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Hellinger</a
+                >
+                <a
+                  href="jaccardDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Jaccard</a
+                >
+                <a
+                  href="mahalanobisDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Mahalanobis</a
+                >
+                <a
+                  href="manhattanDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Manhattan</a
+                >
+                <a
+                  href="minkowskiDistance.html"
+                  class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                  >Dist. de Minkowski</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main>
+        <section id="intro" class="bg-white p-6 rounded-lg shadow-md mb-10">
+          <h2 class="text-3xl font-semibold text-teal-600 mb-4">Bem-vindo!</h2>
+          <p class="mb-4 leading-relaxed text-lg">
+            Este site é dedicado à exploração e compreensão de várias
+            <strong>métricas de distância</strong> utilizadas em matemática,
+            ciência de dados, e aprendizado de máquina. Cada métrica oferece uma
+            maneira diferente de quantificar a "distância" ou "dissimilaridade"
+            entre pontos de dados.
+          </p>
+          <p class="leading-relaxed text-lg">
+            Navegue pelas diferentes métricas abaixo para aprender sobre suas
+            definições, fórmulas, aplicações práticas e interagir com
+            visualizações dinâmicas.
+          </p>
+        </section>
+
+        <section id="metric-links" class="mb-10">
+          <h2 class="text-3xl font-semibold text-teal-600 mb-6 text-center">
+            Explore as Métricas
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Links will be populated here -->
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Chebyshev</h3>
+              <p class="metric-link-description">
+                Também conhecida como distância máxima ou métrica do tabuleiro
+                de xadrez.
+              </p>
+              <a
+                href="chebyshevDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Correlação</h3>
+              <p class="metric-link-description">
+                Mede a dissimilaridade baseada na correlação entre dois vetores.
+              </p>
+              <a
+                href="correlationDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância Cosseno</h3>
+              <p class="metric-link-description">
+                Mede a semelhança angular entre dois vetores, ignorando suas
+                magnitudes.
+              </p>
+              <a
+                href="cosineDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância Dice</h3>
+              <p class="metric-link-description">
+                Métrica de conjunto para comparar a similaridade de dois
+                conjuntos de amostras.
+              </p>
+              <a
+                href="diceDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância Euclidiana</h3>
+              <p class="metric-link-description">
+                A distância "em linha reta" entre dois pontos no espaço
+                Euclidiano.
+              </p>
+              <a
+                href="euclidianDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Hamming</h3>
+              <p class="metric-link-description">
+                Para strings de mesmo comprimento, conta o número de posições
+                com símbolos diferentes.
+              </p>
+              <a
+                href="hammingDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Hellinger</h3>
+              <p class="metric-link-description">
+                Mede a similaridade entre duas distribuições de probabilidade.
+              </p>
+              <a
+                href="hellingerDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Jaccard</h3>
+              <p class="metric-link-description">
+                Mede a dissimilaridade entre conjuntos de amostras, baseada no
+                índice de Jaccard.
+              </p>
+              <a
+                href="jaccardDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Mahalanobis</h3>
+              <p class="metric-link-description">
+                Mede a distância entre um ponto e uma distribuição, considerando
+                a correlação entre variáveis.
+              </p>
+              <a
+                href="mahalanobisDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Manhattan</h3>
+              <p class="metric-link-description">
+                Distância medida ao longo dos eixos em ângulos retos (soma das
+                diferenças absolutas).
+              </p>
+              <a
+                href="manhattanDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+            <div class="metric-link-item">
+              <h3 class="metric-link-title">Distância de Minkowski</h3>
+              <p class="metric-link-description">
+                Distância em um espaço vetorial normado que pode ser considerada
+                como uma generalização de outras métricas de distância mais
+                conhecidas.
+              </p>
+              <a
+                href="minkowskiDistance.html"
+                class="inline-block mt-3 text-teal-500 hover:text-teal-700 font-semibold"
+                >Explorar &rarr;</a
+              >
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Explorador de Métricas de
+          Distância Interativas. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+      });
+    </script>
+    <script>
+      // Simple script for dropdown toggle
+      const metricsMenuButton = document.getElementById("metrics-menu-button");
+      const metricsDropdown = document.getElementById("metrics-dropdown");
+      if (metricsMenuButton && metricsDropdown) {
+        metricsMenuButton.addEventListener("click", () => {
+          metricsDropdown.classList.toggle("hidden");
+        });
+        // Optional: Close dropdown if clicked outside
+        document.addEventListener("click", (event) => {
+          if (
+            !metricsMenuButton.contains(event.target) &&
+            !metricsDropdown.contains(event.target)
+          ) {
+            metricsDropdown.classList.add("hidden");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
