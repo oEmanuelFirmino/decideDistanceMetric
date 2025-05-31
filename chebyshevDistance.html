@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Distância de Chebyshev Interativa</title>
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3833118765411251"
+      crossorigin="anonymous"
+    ></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 
         Visualization & Content Choices:
@@ -72,11 +77,15 @@
   </head>
   <body class="bg-slate-100 text-slate-700 antialiased">
     <div class="bg-teal-600 text-white shadow-md">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-            <div class="flex items-center">
-                <a href="index.html" class="text-xl font-bold hover:text-teal-200 transition-colors">Página Inicial</a>
-            </div>
+          <div class="flex items-center">
+            <a
+              href="index.html"
+              class="text-xl font-bold hover:text-teal-200 transition-colors"
+              >Página Inicial</a
+            >
+          </div>
           <div class="relative">
             <button
               id="metrics-menu-button"
@@ -146,8 +155,8 @@
             </div>
           </div>
         </div>
+      </div>
     </div>
-</div>
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
       <header class="text-center mb-8">
         <h1 class="text-4xl font-bold text-teal-600">
@@ -757,21 +766,24 @@
         }
       });
     </script>
-<script>
-// Simple script for dropdown toggle
-const metricsMenuButton = document.getElementById('metrics-menu-button');
-const metricsDropdown = document.getElementById('metrics-dropdown');
-if (metricsMenuButton && metricsDropdown) {
-    metricsMenuButton.addEventListener('click', () => {
-        metricsDropdown.classList.toggle('hidden');
-    });
-    // Optional: Close dropdown if clicked outside
-    document.addEventListener('click', (event) => {
-        if (!metricsMenuButton.contains(event.target) && !metricsDropdown.contains(event.target)) {
-            metricsDropdown.classList.add('hidden');
-        }
-    });
-}
-</script>
+    <script>
+      // Simple script for dropdown toggle
+      const metricsMenuButton = document.getElementById("metrics-menu-button");
+      const metricsDropdown = document.getElementById("metrics-dropdown");
+      if (metricsMenuButton && metricsDropdown) {
+        metricsMenuButton.addEventListener("click", () => {
+          metricsDropdown.classList.toggle("hidden");
+        });
+        // Optional: Close dropdown if clicked outside
+        document.addEventListener("click", (event) => {
+          if (
+            !metricsMenuButton.contains(event.target) &&
+            !metricsDropdown.contains(event.target)
+          ) {
+            metricsDropdown.classList.add("hidden");
+          }
+        });
+      }
+    </script>
   </body>
 </html>
