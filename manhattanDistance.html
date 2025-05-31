@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Manhattan Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição, Fórmula, Propriedades, Aplicações: Text blocks, lists (HTML/Tailwind) to inform. 
+        - Visualizador: HTML Canvas for custom 2D point and path drawing (horizontal/vertical segments), JS for input handling, Manhattan distance calculation, and dynamic canvas/text updates. This provides direct, hands-on exploration.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #2563eb; /* blue-600 */
+        color: #2563eb;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #manhattanCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 350px;
+        }
+      }
+      @media (min-width: 768px) {
+        /* md breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+      .formula {
+        font-family: "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto; /* Allow horizontal scroll for long formulas */
+        white-space: pre; /* Preserve whitespace and prevent wrapping */
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          🏙️ Distância de Manhattan Interativa 🏙️
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="propriedades"
+        >
+          Propriedades
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            O que é a Distância de Manhattan?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Esta seção apresenta o conceito da Distância de Manhattan. Você
+            aprenderá que ela mede a distância entre dois pontos em uma grade,
+            movendo-se apenas em direções horizontais ou verticais, como se
+            estivesse navegando pelos quarteirões de uma cidade.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância de Manhattan</strong>, também conhecida como
+            distância L1, distância do táxi, distância da cidade-bloco ou
+            distância retilínea, é a distância entre dois pontos medida ao longo
+            dos eixos em ângulos retos. Imagine que você está em uma cidade com
+            um layout de grade (como Manhattan) e só pode se mover ao longo das
+            ruas (horizontalmente ou verticalmente), não podendo cortar caminho
+            pelas diagonais dos quarteirões. A distância que você percorreria é
+            a Distância de Manhattan.
+          </p>
+          <p class="leading-relaxed">
+            Ela é frequentemente usada em situações onde o movimento diagonal
+            não é prático ou possível, como em layouts de circuitos impressos,
+            planejamento urbano, ou em certas aplicações de aprendizado de
+            máquina e processamento de imagens onde as características são
+            medidas em uma grade.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            💡 Fórmula da Distância de Manhattan e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Aqui, exploramos a matemática por trás da Distância de Manhattan.
+            Serão apresentadas as fórmulas para espaços de diferentes dimensões
+            e explicados os componentes de cada fórmula.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula Geral (n-dimensões)
+            </h3>
+            <p class="mb-2">
+              Para dois pontos P = (p<sub>1</sub>, p<sub>2</sub>, ...,
+              p<sub>n</sub>) e Q = (q<sub>1</sub>, q<sub>2</sub>, ...,
+              q<sub>n</sub>) em um espaço n-dimensional, a Distância de
+              Manhattan d<sub>1</sub>(P,Q) é dada pela soma das diferenças
+              absolutas de suas coordenadas:
+            </p>
+            <div class="formula">
+              d<sub>1</sub>(P,Q) = |q₁ - p₁| + |q₂ - p₂| + ... + |qₙ - pₙ| = ∑
+              |qᵢ - pᵢ|, para i de 1 a n
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula em 2 Dimensões (Plano)
+            </h3>
+            <p class="mb-2">
+              Se P = (x<sub>1</sub>, y<sub>1</sub>) e Q = (x<sub>2</sub>,
+              y<sub>2</sub>) são dois pontos no plano:
+            </p>
+            <div class="formula">
+              d<sub>1</sub>(P,Q) = |x₂ - x₁| + |y₂ - y₁|
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+              Esta é a soma das distâncias horizontais e verticais entre os
+              pontos.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula em 3 Dimensões (Espaço)
+            </h3>
+            <p class="mb-2">
+              Se P = (x<sub>1</sub>, y<sub>1</sub>, z<sub>1</sub>) e Q =
+              (x<sub>2</sub>, y<sub>2</sub>, z<sub>2</sub>) são dois pontos no
+              espaço:
+            </p>
+            <div class="formula">
+              d<sub>1</sub>(P,Q) = |x₂ - x₁| + |y₂ - y₁| + |z₂ - z₁|
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed">
+              <li>
+                <strong>P, Q:</strong> São os dois pontos entre os quais a
+                distância está sendo calculada.
+              </li>
+              <li>
+                <strong>(p<sub>1</sub>, ..., p<sub>n</sub>)</strong> e
+                <strong>(q<sub>1</sub>, ..., q<sub>n</sub>):</strong> São as
+                coordenadas dos pontos P e Q.
+              </li>
+              <li>
+                <strong>|qᵢ - pᵢ|:</strong> Representa o valor absoluto da
+                diferença entre as i-ésimas coordenadas dos pontos Q e P. Isso
+                garante que a contribuição de cada dimensão para a distância
+                total seja sempre positiva.
+              </li>
+              <li>
+                <strong>∑ :</strong> Símbolo de somatório, indicando que somamos
+                os termos |qᵢ - pᵢ| para todas as dimensões, de i=1 até n.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          id="propriedades"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔑 Propriedades Fundamentais
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Manhattan, assim como a Euclidiana, possui
+            propriedades matemáticas importantes que a tornam uma "métrica" bem
+            definida.
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">1. Não-negatividade</h3>
+              <p class="text-sm">
+                A distância entre dois pontos é sempre maior ou igual a zero:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>1</sub>(P, Q) ≥ 0</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                2. Identidade dos Indiscerníveis
+              </h3>
+              <p class="text-sm">
+                A distância de um ponto a ele mesmo é zero, e se a distância
+                entre dois pontos é zero, então os pontos são idênticos:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>1</sub>(P, Q) = 0</code
+                >
+                se e somente se
+                <code class="text-xs bg-slate-200 p-1 rounded">P = Q</code>.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">3. Simetria</h3>
+              <p class="text-sm">
+                A distância de P a Q é a mesma que a distância de Q a P:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>1</sub>(P, Q) = d<sub>1</sub>(Q, P)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                4. Desigualdade Triangular
+              </h3>
+              <p class="text-sm">
+                Para quaisquer três pontos P, Q e R, a distância de P a R não é
+                maior que a soma das distâncias de P a Q e de Q a R:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>1</sub>(P, R) ≤ d<sub>1</sub>(P, Q) + d<sub>1</sub>(Q,
+                  R)</code
+                >.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Manhattan é útil em cenários onde o movimento é
+            restrito a uma grade ou onde as diferenças dimensionais são somadas
+            diretamente.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🚗 Navegação e Robótica
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em ambientes de grade, como armazéns ou cidades planejadas, para
+                calcular caminhos ou distâncias de deslocamento de robôs e
+                veículos.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖥️ Processamento de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada para comparar blocos de pixels ou características em
+                imagens, por exemplo, na detecção de texturas ou em algoritmos
+                de correspondência de padrões.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧠 Aprendizado de Máquina
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em alguns algoritmos, especialmente quando se lida com dados de
+                alta dimensão ou características discretas, a Distância de
+                Manhattan pode ser mais robusta a outliers do que a Euclidiana.
+                Usada em regressão Lasso.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                ♟️ Jogos de Tabuleiro
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para calcular o número mínimo de movimentos que uma peça precisa
+                para ir de uma casa a outra em um tabuleiro, movendo-se apenas
+                horizontal ou verticalmente (ex: torre no xadrez).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar sequências genéticas ou vetores de características
+                onde as diferenças em cada posição são somadas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧩 Design de Circuitos (VLSI)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                No projeto de circuitos integrados, os fios geralmente são
+                roteados em direções horizontais e verticais, tornando a
+                Distância de Manhattan uma métrica natural para estimar o
+                comprimento dos fios.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Manhattan
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Experimente a Distância de Manhattan em ação! Insira as coordenadas
+            (x, y) para dois pontos, Ponto 1 e Ponto 2. O gráfico mostrará esses
+            pontos e o caminho em "blocos" (horizontal e vertical) entre eles. A
+            Distância de Manhattan calculada será exibida.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Ponto 1 (x₁, y₁)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="p1x_manhattan"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="x₁"
+                  />
+                  <input
+                    type="number"
+                    id="p1y_manhattan"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="y₁"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Ponto 2 (x₂, y₂)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="p2x_manhattan"
+                    value="4"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="x₂"
+                  />
+                  <input
+                    type="number"
+                    id="p2y_manhattan"
+                    value="5"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="y₂"
+                  />
+                </div>
+              </div>
+              <div class="mt-6 space-y-3">
+                <p class="text-lg"><strong>Distância de Manhattan:</strong></p>
+                <p
+                  id="manhattanDistanceResult"
+                  class="font-bold text-blue-600 text-2xl"
+                >
+                  N/A
+                </p>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="manhattanCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                O sistema de coordenadas se ajusta dinamicamente. O caminho
+                tracejado mostra uma das rotas possíveis.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYearManhattan"></span> Aplicação Interativa da
+          Distância de Manhattan. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYearManhattan").textContent =
+          new Date().getFullYear();
+
+        const p1xInput = document.getElementById("p1x_manhattan");
+        const p1yInput = document.getElementById("p1y_manhattan");
+        const p2xInput = document.getElementById("p2x_manhattan");
+        const p2yInput = document.getElementById("p2y_manhattan");
+        const distanceResultEl = document.getElementById(
+          "manhattanDistanceResult"
+        );
+        const canvas = document.getElementById("manhattanCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateAndDrawManhattan() {
+          const p1x = parseFloat(p1xInput.value) || 0;
+          const p1y = parseFloat(p1yInput.value) || 0;
+          const p2x = parseFloat(p2xInput.value) || 0;
+          const p2y = parseFloat(p2yInput.value) || 0;
+
+          const deltaX = Math.abs(p2x - p1x);
+          const deltaY = Math.abs(p2y - p1y);
+          const distance = deltaX + deltaY;
+
+          distanceResultEl.textContent = distance.toFixed(4);
+          drawManhattanPath(p1x, p1y, p2x, p2y, distance);
+        }
+
+        function drawManhattanPath(x1, y1, x2, y2, dist) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          const padding = 40;
+          const minXData = Math.min(x1, x2);
+          const maxXData = Math.max(x1, x2);
+          const minYData = Math.min(y1, y2);
+          const maxYData = Math.max(y1, y2);
+
+          let dataWidth = maxXData - minXData;
+          let dataHeight = maxYData - minYData;
+
+          if (dataWidth === 0) dataWidth = Math.max(10, Math.abs(x1) * 0.2, 1);
+          if (dataHeight === 0)
+            dataHeight = Math.max(10, Math.abs(y1) * 0.2, 1);
+
+          const scaleX = (width - 2 * padding) / dataWidth;
+          const scaleY = (height - 2 * padding) / dataHeight;
+          const scale = Math.min(scaleX, scaleY) * 0.9;
+
+          const drawingOriginX =
+            padding + (width - 2 * padding - dataWidth * scale) / 2;
+          const drawingOriginY =
+            padding + (height - 2 * padding - dataHeight * scale) / 2;
+
+          const toCanvasX = (dataX) =>
+            drawingOriginX + (dataX - minXData) * scale;
+          const toCanvasY = (dataY) =>
+            height - (drawingOriginY + (dataY - minYData) * scale);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.lineWidth = 1;
+          const xAxisY =
+            minYData <= 0 && maxYData >= 0
+              ? toCanvasY(0)
+              : height - padding / 2;
+          ctx.moveTo(padding / 2, xAxisY);
+          ctx.lineTo(width - padding / 2, xAxisY);
+          const yAxisX =
+            minXData <= 0 && maxXData >= 0 ? toCanvasX(0) : padding / 2;
+          ctx.moveTo(yAxisX, padding / 2);
+          ctx.lineTo(yAxisX, height - padding / 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = "#e2e8f0";
+          const numGridLines = 5;
+          for (let i = 0; i <= numGridLines; i++) {
+            const xVal = minXData + (dataWidth / numGridLines) * i;
+            const yVal = minYData + (dataHeight / numGridLines) * i;
+            const cX = toCanvasX(xVal);
+            const cY = toCanvasY(yVal);
+            ctx.beginPath();
+            ctx.moveTo(cX, padding / 2);
+            ctx.lineTo(cX, height - padding / 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(padding / 2, cY);
+            ctx.lineTo(width - padding / 2, cY);
+            ctx.stroke();
+          }
+
+          const cP1X = toCanvasX(x1);
+          const cP1Y = toCanvasY(y1);
+          const cP2X = toCanvasX(x2);
+          const cP2Y = toCanvasY(y2);
+
+          ctx.beginPath();
+          ctx.moveTo(cP1X, cP1Y);
+          ctx.lineTo(cP2X, cP1Y);
+          ctx.lineTo(cP2X, cP2Y);
+          ctx.strokeStyle = "#16a34a";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Draw points
+          ctx.beginPath();
+          ctx.arc(cP1X, cP1Y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#ef4444";
+          ctx.fill();
+          ctx.fillStyle = "#7f1d1d";
+          ctx.fillText(`P1(${x1},${y1})`, cP1X + 8, cP1Y - 8);
+
+          ctx.beginPath();
+          ctx.arc(cP2X, cP2Y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#3b82f6";
+          ctx.fill();
+          ctx.fillStyle = "#1e3a8a";
+          ctx.fillText(`P2(${x2},${y2})`, cP2X + 8, cP2Y - 8);
+
+          const midXPath = cP2X;
+          const midYPath = cP1Y;
+          ctx.fillStyle = "#052e16";
+          ctx.font = "12px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            `dx = ${Math.abs(x2 - x1).toFixed(2)}`,
+            (cP1X + cP2X) / 2,
+            cP1Y - 5
+          );
+          ctx.fillText(
+            `dy = ${Math.abs(y2 - y1).toFixed(2)}`,
+            cP2X + 10,
+            (cP1Y + cP2Y) / 2
+          );
+          ctx.fillText(
+            `d = ${dist.toFixed(2)}`,
+            (cP1X + cP2X) / 2,
+            (cP1Y + cP2Y) / 2
+          );
+          ctx.textAlign = "start";
+        }
+
+        [p1xInput, p1yInput, p2xInput, p2yInput].forEach((input) => {
+          input.addEventListener("input", calculateAndDrawManhattan);
+        });
+
+        function setupCanvas() {
+          const style = getComputedStyle(canvas.parentElement);
+          canvas.width = parseInt(style.width) || 300;
+          canvas.height = parseInt(style.height) || 300;
+          calculateAndDrawManhattan();
+        }
+
+        if (typeof ResizeObserver !== "undefined") {
+          new ResizeObserver(() => {
+            setupCanvas();
+          }).observe(canvas.parentElement);
+        } else {
+          window.addEventListener("resize", setupCanvas);
+        }
+
+        setupCanvas();
+      });
+    </script>
+  </body>
+</html>

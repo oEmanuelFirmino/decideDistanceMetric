@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância Euclidiana Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição, Fórmula, Propriedades, Aplicações: Text blocks, lists (HTML/Tailwind) to inform. 
+        - Visualizador: HTML Canvas for custom 2D point and line drawing, JS for input handling, distance calculation, and dynamic canvas/text updates. This provides direct, hands-on exploration. Chart.js included as required but not used for this specific visualizer, as direct canvas manipulation is more suitable for drawing points and lines.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #2563eb; /* blue-600 */
+        color: #2563eb;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #euclideanCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 350px;
+        }
+      }
+      @media (min-width: 768px) {
+        /* md breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+      /* Styling for formula representation */
+      .formula {
+        font-family: "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto; /* Allow horizontal scroll for long formulas */
+        white-space: pre; /* Preserve whitespace and prevent wrapping */
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          📏 Distância Euclidiana Interativa 📏
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="propriedades"
+        >
+          Propriedades
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            O que é a Distância Euclidiana?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Esta seção apresenta o conceito fundamental da Distância Euclidiana.
+            Você aprenderá que ela representa a noção intuitiva de distância em
+            linha reta entre dois pontos, sendo a forma mais comum de medir
+            distâncias em diversos contextos geométricos e de dados.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância Euclidiana</strong> é a medida de distância "em
+            linha reta" entre dois pontos em um espaço Euclidiano. É a noção
+            mais comum e intuitiva de distância, correspondendo ao comprimento
+            do segmento de reta que une os dois pontos. Se você já usou uma
+            régua para medir a distância entre dois pontos em um papel, você
+            estava medindo a Distância Euclidiana!
+          </p>
+          <p class="leading-relaxed">
+            Ela é fundamental em geometria, física, ciência da computação
+            (especialmente em aprendizado de máquina e processamento de imagens)
+            e muitas outras áreas onde precisamos quantificar a "proximidade" ou
+            "afastamento" entre objetos representados como pontos em um espaço.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            💡 Fórmula da Distância Euclidiana e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Aqui, mergulhamos na matemática por trás da Distância Euclidiana.
+            Serão apresentadas as fórmulas para espaços de diferentes dimensões
+            (2D, 3D e n-dimensional) e explicados os componentes de cada
+            fórmula. Entender como as coordenadas dos pontos são usadas no
+            cálculo é essencial para aplicar este conceito corretamente.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula Geral (n-dimensões)
+            </h3>
+            <p class="mb-2">
+              Para dois pontos P = (p<sub>1</sub>, p<sub>2</sub>, ...,
+              p<sub>n</sub>) e Q = (q<sub>1</sub>, q<sub>2</sub>, ...,
+              q<sub>n</sub>) em um espaço n-dimensional, a Distância Euclidiana
+              d(P,Q) é dada por:
+            </p>
+            <div class="formula">
+              d(P,Q) = √((q₁ - p₁)² + (q₂ - p₂)² + ... + (qₙ - pₙ)²) = √(∑ (qᵢ -
+              pᵢ)²), para i de 1 a n
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula em 2 Dimensões (Plano)
+            </h3>
+            <p class="mb-2">
+              Se P = (x<sub>1</sub>, y<sub>1</sub>) e Q = (x<sub>2</sub>,
+              y<sub>2</sub>) são dois pontos no plano:
+            </p>
+            <div class="formula">d(P,Q) = √((x₂ - x₁)² + (y₂ - y₁)² )</div>
+            <p class="mt-2 text-sm text-slate-500">
+              Esta é a aplicação direta do Teorema de Pitágoras.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula em 3 Dimensões (Espaço)
+            </h3>
+            <p class="mb-2">
+              Se P = (x<sub>1</sub>, y<sub>1</sub>, z<sub>1</sub>) e Q =
+              (x<sub>2</sub>, y<sub>2</sub>, z<sub>2</sub>) são dois pontos no
+              espaço:
+            </p>
+            <div class="formula">
+              d(P,Q) = √((x₂ - x₁)² + (y₂ - y₁)² + (z₂ - z₁)² )
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed">
+              <li>
+                <strong>P, Q:</strong> São os dois pontos entre os quais a
+                distância está sendo calculada.
+              </li>
+              <li>
+                <strong
+                  >(p<sub>1</sub>, p<sub>2</sub>, ..., p<sub>n</sub>)</strong
+                >
+                e
+                <strong
+                  >(q<sub>1</sub>, q<sub>2</sub>, ..., q<sub>n</sub>):</strong
+                >
+                São as coordenadas dos pontos P e Q, respectivamente, em um
+                espaço de n-dimensões.
+              </li>
+              <li>
+                <strong>(qᵢ - pᵢ):</strong> Representa a diferença entre as
+                i-ésimas coordenadas dos pontos Q e P.
+              </li>
+              <li>
+                <strong>(qᵢ - pᵢ)²:</strong> O quadrado dessa diferença. Somar
+                esses quadrados para todas as dimensões e tirar a raiz quadrada
+                é o cerne do cálculo.
+              </li>
+              <li><strong>√ :</strong> Símbolo da raiz quadrada.</li>
+              <li>
+                <strong>∑ :</strong> Símbolo de somatório, indicando que somamos
+                os termos (qᵢ - pᵢ)² para todas as dimensões, de i=1 até n.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          id="propriedades"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔑 Propriedades Fundamentais
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância Euclidiana possui propriedades matemáticas importantes
+            que a tornam uma "métrica" bem definida. Esta seção detalha essas
+            propriedades, como não-negatividade, identidade, simetria e a
+            desigualdade triangular. Compreender essas características ajuda a
+            entender por que a Distância Euclidiana é tão amplamente utilizada e
+            confiável.
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">1. Não-negatividade</h3>
+              <p class="text-sm">
+                A distância entre dois pontos é sempre maior ou igual a zero:
+                <code class="text-xs bg-slate-200 p-1 rounded">d(P, Q) ≥ 0</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                2. Identidade dos Indiscerníveis (ou Reflexividade)
+              </h3>
+              <p class="text-sm">
+                A distância de um ponto a ele mesmo é zero, e se a distância
+                entre dois pontos é zero, então os pontos são idênticos:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d(P, Q) = 0</code
+                >
+                se e somente se
+                <code class="text-xs bg-slate-200 p-1 rounded">P = Q</code>.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">3. Simetria</h3>
+              <p class="text-sm">
+                A distância de P a Q é a mesma que a distância de Q a P:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d(P, Q) = d(Q, P)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                4. Desigualdade Triangular
+              </h3>
+              <p class="text-sm">
+                Para quaisquer três pontos P, Q e R, a distância de P a R não é
+                maior que a soma das distâncias de P a Q e de Q a R:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d(P, R) ≤ d(P, Q) + d(Q, R)</code
+                >. Isso significa que "a menor distância entre dois pontos é uma
+                reta".
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A versatilidade da Distância Euclidiana a torna uma ferramenta
+            crucial em inúmeros campos. Nesta seção, exploraremos algumas de
+            suas aplicações mais significativas, desde algoritmos de aprendizado
+            de máquina que agrupam dados ou classificam novos exemplos, até usos
+            em visão computacional, robótica e sistemas de navegação.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🤖 Aprendizado de Máquina
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada em algoritmos como k-Nearest Neighbors (k-NN) para
+                classificação (encontrando os 'vizinhos mais próximos') e
+                k-Means para agrupamento (agrupando pontos de dados com base na
+                proximidade).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                👁️ Visão Computacional
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar descritores de características de imagens,
+                permitindo tarefas como reconhecimento de objetos e busca por
+                similaridade de imagens.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🦾 Robótica
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Fundamental para navegação, planejamento de trajetória
+                (calculando o caminho mais curto ou evitando obstáculos) e
+                localização de robôs no espaço.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🗺️ Geografia e Navegação (GPS)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Embora a Terra seja uma esfera, para distâncias curtas, a
+                Distância Euclidiana pode ser uma boa aproximação para calcular
+                distâncias entre coordenadas geográficas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📊 Análise de Dados e Estatística
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em análise de clusters, redução de dimensionalidade e para medir
+                a dissimilaridade entre observações em um conjunto de dados.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🎮 Computação Gráfica e Jogos
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para detecção de colisão, cálculos de física, animações e
+                posicionamento de objetos em cenas 2D e 3D.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔬 Visualizador Interativo da Distância Euclidiana
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Experimente a Distância Euclidiana em ação! Insira as coordenadas
+            (x, y) para dois pontos, Ponto 1 e Ponto 2, nos campos abaixo. O
+            gráfico à direita mostrará esses pontos em um plano cartesiano e a
+            linha reta que os conecta. A Distância Euclidiana calculada entre
+            eles será exibida dinamicamente. Altere os valores e observe como a
+            distância e a visualização mudam.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Ponto 1 (x₁, y₁)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="p1x"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="x₁"
+                  />
+                  <input
+                    type="number"
+                    id="p1y"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="y₁"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Ponto 2 (x₂, y₂)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="p2x"
+                    value="4"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="x₂"
+                  />
+                  <input
+                    type="number"
+                    id="p2y"
+                    value="5"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="y₂"
+                  />
+                </div>
+              </div>
+              <div class="mt-6 space-y-3">
+                <p class="text-lg"><strong>Distância Euclidiana:</strong></p>
+                <p
+                  id="euclideanDistanceResult"
+                  class="font-bold text-blue-600 text-2xl"
+                >
+                  N/A
+                </p>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="euclideanCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                O sistema de coordenadas se ajusta dinamicamente aos valores
+                inseridos.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da
+          Distância Euclidiana. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const p1xInput = document.getElementById("p1x");
+        const p1yInput = document.getElementById("p1y");
+        const p2xInput = document.getElementById("p2x");
+        const p2yInput = document.getElementById("p2y");
+        const distanceResultEl = document.getElementById(
+          "euclideanDistanceResult"
+        );
+        const canvas = document.getElementById("euclideanCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateAndDraw() {
+          const p1x = parseFloat(p1xInput.value) || 0;
+          const p1y = parseFloat(p1yInput.value) || 0;
+          const p2x = parseFloat(p2xInput.value) || 0;
+          const p2y = parseFloat(p2yInput.value) || 0;
+
+          const deltaX = p2x - p1x;
+          const deltaY = p2y - p1y;
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+          distanceResultEl.textContent = distance.toFixed(4);
+          drawPointsAndLine(p1x, p1y, p2x, p2y, distance);
+        }
+
+        function drawPointsAndLine(x1, y1, x2, y2, dist) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          const padding = 40;
+          const minX = Math.min(x1, x2);
+          const maxX = Math.max(x1, x2);
+          const minY = Math.min(y1, y2);
+          const maxY = Math.max(y1, y2);
+
+          let dataWidth = maxX - minX;
+          let dataHeight = maxY - minY;
+
+          if (dataWidth === 0) dataWidth = 10;
+          if (dataHeight === 0) dataHeight = 10;
+
+          const scaleX = (width - 2 * padding) / dataWidth;
+          const scaleY = (height - 2 * padding) / dataHeight;
+          const scale = Math.min(scaleX, scaleY) * 0.9;
+
+          const drawingOriginX =
+            padding + (width - 2 * padding - dataWidth * scale) / 2;
+          const drawingOriginY =
+            padding + (height - 2 * padding - dataHeight * scale) / 2;
+
+          const toCanvasX = (dataX) => drawingOriginX + (dataX - minX) * scale;
+          const toCanvasY = (dataY) =>
+            height - (drawingOriginY + (dataY - minY) * scale);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.lineWidth = 1;
+          const xAxisY =
+            minY <= 0 && maxY >= 0 ? toCanvasY(0) : height - padding / 2;
+          ctx.moveTo(padding / 2, xAxisY);
+          ctx.lineTo(width - padding / 2, xAxisY);
+          const yAxisX = minX <= 0 && maxX >= 0 ? toCanvasX(0) : padding / 2;
+          ctx.moveTo(yAxisX, padding / 2);
+          ctx.lineTo(yAxisX, height - padding / 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = "#e2e8f0";
+          const numGridLines = 5;
+          for (let i = 0; i <= numGridLines; i++) {
+            const xVal = minX + (dataWidth / numGridLines) * i;
+            const yVal = minY + (dataHeight / numGridLines) * i;
+            const cX = toCanvasX(xVal);
+            const cY = toCanvasY(yVal);
+            ctx.beginPath();
+            ctx.moveTo(cX, padding / 2);
+            ctx.lineTo(cX, height - padding / 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(padding / 2, cY);
+            ctx.lineTo(width - padding / 2, cY);
+            ctx.stroke();
+          }
+
+          const cP1X = toCanvasX(x1);
+          const cP1Y = toCanvasY(y1);
+          ctx.beginPath();
+          ctx.arc(cP1X, cP1Y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#ef4444";
+          ctx.fill();
+          ctx.fillStyle = "#7f1d1d";
+          ctx.fillText(`P1(${x1},${y1})`, cP1X + 8, cP1Y - 8);
+
+          const cP2X = toCanvasX(x2);
+          const cP2Y = toCanvasY(y2);
+          ctx.beginPath();
+          ctx.arc(cP2X, cP2Y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#3b82f6";
+          ctx.fill();
+          ctx.fillStyle = "#1e3a8a";
+          ctx.fillText(`P2(${x2},${y2})`, cP2X + 8, cP2Y - 8);
+
+          ctx.beginPath();
+          ctx.moveTo(cP1X, cP1Y);
+          ctx.lineTo(cP2X, cP2Y);
+          ctx.strokeStyle = "#16a34a";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          const midX = (cP1X + cP2X) / 2;
+          const midY = (cP1Y + cP2Y) / 2;
+          ctx.fillStyle = "#052e16";
+          ctx.font = "12px Inter, sans-serif";
+          ctx.textAlign = "center";
+          const textOffsetY =
+            cP1Y > cP2Y || (cP1Y === cP2Y && cP1X < cP2X) ? -10 : 20;
+          ctx.fillText(`d = ${dist.toFixed(2)}`, midX, midY + textOffsetY);
+          ctx.textAlign = "start";
+        }
+
+        [p1xInput, p1yInput, p2xInput, p2yInput].forEach((input) => {
+          input.addEventListener("input", calculateAndDraw);
+        });
+
+        const style = getComputedStyle(canvas.parentElement);
+        canvas.width = parseInt(style.width);
+        canvas.height = parseInt(style.height);
+        calculateAndDraw();
+
+        new ResizeObserver(() => {
+          const style = getComputedStyle(canvas.parentElement);
+          canvas.width = parseInt(style.width);
+          canvas.height = parseInt(style.height);
+          calculateAndDraw();
+        }).observe(canvas.parentElement);
+      });
+    </script>
+  </body>
+</html>

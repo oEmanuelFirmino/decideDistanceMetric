@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Hellinger Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #0d9488; /* teal-600 */
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        height: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #hellingerChart {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .formula {
+        font-family: "Consolas", "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto;
+        white-space: pre;
+      }
+      .dist-input {
+        width: 100%;
+        max-width: 120px;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.375rem;
+      }
+      .error-message {
+        color: #dc2626; /* red-600 */
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-teal-600">
+          🌊 Distância de Hellinger Interativa 🌊
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="intuicao"
+        >
+          Intuição e Vantagens
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            O que é a Distância de Hellinger?
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A <strong>Distância de Hellinger</strong> é uma métrica para
+            quantificar a similaridade entre duas distribuições de
+            probabilidade. Ela é particularmente útil quando lidamos com
+            distribuições discretas ou contínuas, e oferece uma medida simétrica
+            que varia entre 0 (distribuições idênticas) e 1 (distribuições
+            totalmente distintas). Sua robustez a pequenas perturbações e sua
+            capacidade de capturar a sobreposição entre distribuições a tornam
+            uma ferramenta valiosa em diversas áreas.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            Diferentemente de outras métricas, como a divergência de
+            Kullback-Leibler, a Hellinger Distance é simétrica e finita, o que
+            significa que $D_H(P, Q) = D_H(Q, P)$ e seu valor máximo é sempre 1.
+            Isso a torna mais estável para comparações e na detecção de mudanças
+            substanciais entre distribuições.
+          </p>
+          <p class="leading-relaxed">
+            Imagine que você tem duas "pilhas" de areia, cada uma representando
+            uma distribuição de probabilidade. A Distância de Hellinger mede o
+            quão fácil ou difícil é transformar uma pilha na outra, levando em
+            conta a quantidade de sobreposição entre elas. Quanto maior a
+            sobreposição, menor a distância de Hellinger.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            💡 Fórmula da Distância de Hellinger e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A seguir, detalhamos a expressão matemática da Distância de
+            Hellinger para distribuições discretas e contínuas. Entender os
+            termos é crucial para compreender como essa medida avalia a
+            similaridade.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Para Distribuições de Probabilidade Discretas
+            </h3>
+            <p class="mb-2">
+              Dados duas distribuições de probabilidade discretas, $P = (p_1,
+              ..., p_k)$ e $Q = (q_1, ..., q_k)$, a Distância de Hellinger
+              $D_H(P, Q)$ é definida como:
+            </p>
+            <div class="formula">
+              $$D_H(P, Q) = \frac{1}{\sqrt{2}} \sqrt{\sum_{i=1}^{k} (\sqrt{p_i}
+              - \sqrt{q_i})^2}$$
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+              O fator $\frac{1}{\sqrt{2}}$ garante que a distância varie entre 0
+              e 1.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Para Distribuições de Probabilidade Contínuas
+            </h3>
+            <p class="mb-2">
+              Para duas distribuições de probabilidade contínuas $P$ e $Q$ com
+              funções de densidade de probabilidade $f_P(x)$ e $f_Q(x)$, a
+              Distância de Hellinger é definida como:
+            </p>
+            <div class="formula">
+              $$D_H(P, Q) = \frac{1}{\sqrt{2}} \sqrt{\int (\sqrt{f_P(x)} -
+              \sqrt{f_Q(x)})^2 dx}$$
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-3 pl-2 leading-relaxed">
+              <li>
+                <strong>$P$ e $Q$:</strong> Representam as duas distribuições de
+                probabilidade que estão sendo comparadas.
+              </li>
+              <li>
+                <strong>$p_i$ e $q_i$:</strong> São as probabilidades do
+                $i$-ésimo evento (ou bin) nas distribuições discretas $P$ e $Q$,
+                respectivamente. Para distribuições contínuas, $f_P(x)$ e
+                $f_Q(x)$ são as funções de densidade de probabilidade.
+              </li>
+              <li>
+                <strong>$\sqrt{p_i}$ e $\sqrt{q_i}$:</strong> A distância de
+                Hellinger opera nas raízes quadradas das probabilidades, o que a
+                torna sensível à sobreposição.
+              </li>
+              <li>
+                <strong>$\sum_{i=1}^{k}$:</strong> Indica a soma sobre todos os
+                $k$ eventos ou bins na distribuição discreta.
+              </li>
+              <li>
+                <strong>$\int dx$:</strong> Indica a integral sobre todo o
+                domínio para distribuições contínuas.
+              </li>
+              <li>
+                <strong>$\frac{1}{\sqrt{2}}$:</strong> Um fator de normalização
+                que garante que a distância máxima seja 1.
+              </li>
+            </ul>
+            <p
+              class="mt-4 p-3 bg-sky-50 border-l-4 border-sky-400 text-sky-700 rounded text-sm leading-relaxed"
+            >
+              <strong>Essência:</strong> A Distância de Hellinger mede a
+              similaridade entre distribuições de probabilidade ao quantificar o
+              quanto elas se sobrepõem. Quanto maior a sobreposição, menor a
+              distância, indicando maior similaridade.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="intuicao"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🧠 Intuição e Vantagens
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A Distância de Hellinger possui características que a tornam uma
+            escolha robusta para comparar distribuições de probabilidade.
+            Entenda por que ela é tão valorizada em cenários onde outras
+            métricas podem falhar.
+          </p>
+          <ul class="space-y-4">
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">1. Simetria</h3>
+              <p class="text-sm leading-relaxed">
+                Ao contrário da divergência de Kullback-Leibler ($D_{KL}$), a
+                Hellinger Distance é simétrica, ou seja, $D_H(P, Q) = D_H(Q,
+                P)$. Isso significa que a distância de P para Q é a mesma que de
+                Q para P, simplificando sua interpretação e uso em algoritmos
+                onde a ordem de comparação não deve importar.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">2. Finita e Limitada</h3>
+              <p class="text-sm leading-relaxed">
+                Seu valor é sempre entre 0 e 1. Um valor de 0 indica que as
+                distribuições são idênticas, enquanto 1 significa que elas não
+                têm nenhuma sobreposição (suportes disjuntos). Essa propriedade
+                facilita a interpretação e a comparação de distâncias entre
+                diferentes pares de distribuições.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                3. Sensibilidade à Sobreposição
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Por operar com as raízes quadradas das probabilidades, a
+                Hellinger Distance é mais sensível à sobreposição das
+                distribuições. Ela penaliza mais as diferenças onde as
+                probabilidades são altas e é menos afetada por pequenas
+                probabilidades (ou "caudas") onde uma distribuição tem valores e
+                a outra não.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">4. Robustez</h3>
+              <p class="text-sm leading-relaxed">
+                É considerada mais robusta a pequenas flutuações ou ruídos nos
+                dados de probabilidade em comparação com outras métricas que
+                podem ser indefinidas ou dar valores infinitos se uma das
+                distribuições tiver probabilidade zero onde a outra tem uma
+                probabilidade não-zero.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                5. Distância Métrica Verdadeira
+              </h3>
+              <p class="text-sm leading-relaxed">
+                A Distância de Hellinger satisfaz todos os axiomas de uma
+                métrica: não-negatividade ($D_H(P, Q) \ge 0$), identidade dos
+                indistinguíveis ($D_H(P, Q) = 0 \iff P=Q$), simetria ($D_H(P, Q)
+                = D_H(Q, P)$) e a desigualdade triangular ($D_H(P, R) \le D_H(P,
+                Q) + D_H(Q, R)$). Isso a torna matematicamente bem-comportada
+                para muitos algoritmos.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Hellinger, devido às suas propriedades robustas e
+            intuitivas, é amplamente aplicada em diversos campos que envolvem a
+            comparação de distribuições de probabilidade.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🔄 Comparação de Modelos Estatísticos
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Utilizada para avaliar o quão bem um modelo de probabilidade se
+                ajusta aos dados observados, comparando a distribuição gerada
+                pelo modelo com a distribuição empírica dos dados.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Genômica e Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na análise de sequências de DNA ou RNA, pode ser usada para
+                comparar a distribuição de frequências de alelos ou padrões de
+                expressão gênica entre diferentes populações ou condições.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🗣️ Processamento de Linguagem Natural (PLN)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a similaridade entre documentos, tópicos ou vetores
+                de palavras, onde cada um é representado como uma distribuição
+                de frequências de termos.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Visão Computacional
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na comparação de histogramas de cores ou descritores de
+                características de imagens para tarefas como recuperação de
+                imagem ou reconhecimento de objetos.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📈 Análise de Séries Temporais
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para identificar mudanças no comportamento de uma série
+                temporal, comparando as distribuições de probabilidade dos
+                valores em diferentes janelas de tempo.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧪 Quimiometria
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na comparação de espectros ou outros dados analíticos que podem
+                ser interpretados como distribuições.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Hellinger
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Experimente a Distância de Hellinger! Insira os valores de
+            probabilidade para duas **Distribuições Discretas (P e Q)**, cada
+            uma com 3 bins. Certifique-se de que a soma das probabilidades em
+            cada distribuição seja igual a 1 (ou o mais próximo possível,
+            considerando o arredondamento).
+          </p>
+          <p class="mb-6 leading-relaxed">
+            O gráfico abaixo mostrará visualmente a forma de cada distribuição.
+            A Distância de Hellinger calculada será exibida, permitindo que você
+            veja como as mudanças nas probabilidades afetam a similaridade entre
+            as distribuições.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-2">
+                  Distribuição P (p1, p2, p3)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="p1"
+                    value="0.3"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <input
+                    type="number"
+                    id="p2"
+                    value="0.4"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <input
+                    type="number"
+                    id="p3"
+                    value="0.3"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+                <p id="sumP" class="text-sm text-slate-500 mt-1">Soma P: 1.0</p>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-2">
+                  Distribuição Q (q1, q2, q3)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="q1"
+                    value="0.2"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <input
+                    type="number"
+                    id="q2"
+                    value="0.5"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  <input
+                    type="number"
+                    id="q3"
+                    value="0.3"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    class="dist-input p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+                <p id="sumQ" class="text-sm text-slate-500 mt-1">Soma Q: 1.0</p>
+              </div>
+              <div class="mt-4 space-y-2">
+                <p class="text-md">
+                  <strong>Dist. Hellinger (D<sub>H</sub>):</strong>
+                </p>
+                <p
+                  id="hellingerDistanceResult"
+                  class="font-bold text-teal-600 text-xl"
+                >
+                  N/A
+                </p>
+                <p id="hellingerError" class="error-message"></p>
+              </div>
+            </div>
+
+            <div class="md:col-span-1">
+              <div class="canvas-container">
+                <canvas id="hellingerChart"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                Representação gráfica das distribuições P e Q.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da Dist. de
+          Hellinger. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+            if (targetTab === "visualizador") {
+              updateChart();
+            }
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const pInputs = [
+          document.getElementById("p1"),
+          document.getElementById("p2"),
+          document.getElementById("p3"),
+        ];
+        const qInputs = [
+          document.getElementById("q1"),
+          document.getElementById("q2"),
+          document.getElementById("q3"),
+        ];
+        const sumPEl = document.getElementById("sumP");
+        const sumQEl = document.getElementById("sumQ");
+        const hellingerDistanceResultEl = document.getElementById(
+          "hellingerDistanceResult"
+        );
+        const hellingerErrorEl = document.getElementById("hellingerError");
+
+        const ctx = document.getElementById("hellingerChart").getContext("2d");
+        let hellingerChart;
+
+        function calculateHellinger() {
+          hellingerErrorEl.textContent = "";
+          const p = pInputs.map((input) => parseFloat(input.value) || 0);
+          const q = qInputs.map((input) => parseFloat(input.value) || 0);
+
+          const sumP = p.reduce((acc, val) => acc + val, 0);
+          const sumQ = q.reduce((acc, val) => acc + val, 0);
+
+          sumPEl.textContent = `Soma P: ${sumP.toFixed(2)}`;
+          sumQEl.textContent = `Soma Q: ${sumQ.toFixed(2)}`;
+
+          if (Math.abs(sumP - 1) > 0.01 || Math.abs(sumQ - 1) > 0.01) {
+            hellingerErrorEl.textContent =
+              "A soma das probabilidades para cada distribuição deve ser aproximadamente 1.";
+            hellingerDistanceResultEl.textContent = "N/A";
+            return;
+          }
+
+          if (p.some((val) => val < 0) || q.some((val) => val < 0)) {
+            hellingerErrorEl.textContent =
+              "Probabilidades não podem ser negativas.";
+            hellingerDistanceResultEl.textContent = "N/A";
+            return;
+          }
+
+          let sum_sqrt_diff_sq = 0;
+          for (let i = 0; i < p.length; i++) {
+            sum_sqrt_diff_sq += (Math.sqrt(p[i]) - Math.sqrt(q[i])) ** 2;
+          }
+
+          const hellingerDistance =
+            (1 / Math.sqrt(2)) * Math.sqrt(sum_sqrt_diff_sq);
+          hellingerDistanceResultEl.textContent = hellingerDistance.toFixed(4);
+
+          updateChart(p, q);
+        }
+
+        function updateChart(
+          pValues = [0.3, 0.4, 0.3],
+          qValues = [0.2, 0.5, 0.3]
+        ) {
+          if (hellingerChart) {
+            hellingerChart.destroy();
+          }
+
+          hellingerChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: ["Bin 1", "Bin 2", "Bin 3"],
+              datasets: [
+                {
+                  label: "Distribuição P",
+                  data: pValues,
+                  backgroundColor: "rgba(59, 130, 246, 0.6)",
+                  borderColor: "rgba(59, 130, 246, 1)",
+                  borderWidth: 1,
+                },
+                {
+                  label: "Distribuição Q",
+                  data: qValues,
+                  backgroundColor: "rgba(16, 185, 129, 0.6)",
+                  borderColor: "rgba(16, 185, 129, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 1.0,
+                  title: {
+                    display: true,
+                    text: "Probabilidade",
+                  },
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: "Bins",
+                  },
+                },
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      let label = context.dataset.label || "";
+                      if (label) {
+                        label += ": ";
+                      }
+                      if (context.parsed.y !== null) {
+                        label += context.parsed.y.toFixed(2);
+                      }
+                      return label;
+                    },
+                  },
+                },
+                legend: {
+                  display: true,
+                  position: "top",
+                },
+              },
+            },
+          });
+        }
+
+        [...pInputs, ...qInputs].forEach((input) => {
+          input.addEventListener("input", calculateHellinger);
+        });
+
+        calculateHellinger();
+      });
+    </script>
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Dice Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição, Fórmula, Propriedades, Aplicações: Text blocks, lists (HTML/Tailwind) to inform. 
+        - Visualizador: HTML text inputs for sets, JS for input parsing, set operations (intersection, cardinality), Dice Coefficient & Distance calculation, and dynamic HTML updates to display results and intermediate sets.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #2563eb; /* blue-600 */
+        color: #2563eb;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .formula {
+        font-family: "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto; /* Allow horizontal scroll for long formulas */
+        white-space: pre; /* Preserve whitespace and prevent wrapping */
+      }
+      .set-display {
+        background-color: #f8fafc; /* slate-50 */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        min-height: 30px;
+        word-break: break-all;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          🎲 Distância de Dice Interativa (Dice Loss) 🎲
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="propriedades"
+        >
+          Propriedades
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            O que é a Distância de Dice / Perda de Dice?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Esta seção introduz o Coeficiente de Dice e a Distância de Dice.
+            Você aprenderá que o Coeficiente de Dice é uma estatística usada
+            para medir a similaridade entre dois conjuntos, enquanto a Distância
+            de Dice (ou Perda de Dice) mede a dissimilaridade e é frequentemente
+            usada como uma função de perda em aprendizado de máquina,
+            especialmente para tarefas de segmentação de imagens.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            O <strong>Coeficiente de Dice</strong> (também conhecido como índice
+            de Sørensen-Dice ou DSC) é uma medida de similaridade entre dois
+            conjuntos de amostras. Ele varia de 0 (nenhuma sobreposição) a 1
+            (conjuntos idênticos).
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância de Dice</strong> é simplesmente
+            <code class="text-xs bg-slate-200 p-1 rounded"
+              >1 - Coeficiente de Dice</code
+            >. Ela varia de 0 (conjuntos idênticos) a 1 (nenhuma sobreposição).
+            Quando usada como uma função de perda em aprendizado de máquina
+            (conhecida como <strong>Perda de Dice</strong> ou Dice Loss), o
+            objetivo é minimizar essa distância, ou seja, maximizar a
+            sobreposição entre a predição e o valor real (ground truth).
+          </p>
+          <p class="leading-relaxed">
+            É particularmente popular em segmentação de imagens médicas, onde
+            pode lidar bem com o desequilíbrio de classes (por exemplo, quando a
+            região de interesse é muito menor que o fundo).
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            💡 Fórmula da Distância de Dice e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            As fórmulas são baseadas na comparação de dois conjuntos, A e B.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Coeficiente de Dice (DSC)
+            </h3>
+            <p class="mb-2">Para dois conjuntos A e B:</p>
+            <div class="formula">DSC(A,B) = (2 * |A ∩ B|) / (|A| + |B|)</div>
+            <p class="mt-2 text-sm text-slate-500">
+              Se A e B são ambos vazios, DSC(A,B) é frequentemente definido como
+              1. Se apenas um deles é vazio (e o outro não), DSC é 0.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Distância de Dice / Perda de Dice (L<sub>Dice</sub>)
+            </h3>
+            <p class="mb-2">A Distância de Dice é calculada como:</p>
+            <div class="formula">L<sub>Dice</sub>(A,B) = 1 - DSC(A,B)</div>
+            <p class="mt-1 mb-2">Substituindo a fórmula do DSC:</p>
+            <div class="formula">
+              L<sub>Dice</sub>(A,B) = 1 - [ (2 * |A ∩ B|) / (|A| + |B|) ]
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+              Esta perda varia de 0 (sobreposição perfeita) a 1 (nenhuma
+              sobreposição).
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed">
+              <li>
+                <strong>A, B:</strong> São os dois conjuntos finitos que estão
+                sendo comparados. Em segmentação de imagens, A pode ser o
+                conjunto de pixels da máscara predita e B o conjunto de pixels
+                da máscara real (ground truth).
+              </li>
+              <li>
+                <strong>|S|:</strong> Representa a cardinalidade (ou tamanho) do
+                conjunto S, ou seja, o número de elementos distintos em S.
+              </li>
+              <li>
+                <strong>A ∩ B:</strong> A interseção dos conjuntos A e B. É o
+                conjunto de elementos que são comuns a A e B. Em segmentação,
+                representa os pixels corretamente classificados como
+                pertencentes à região de interesse (verdadeiros positivos).
+              </li>
+              <li>
+                <strong>|A| + |B|:</strong> A soma do número de elementos em A e
+                o número de elementos em B.
+              </li>
+              <li>
+                <strong>DSC(A,B):</strong> O Coeficiente de Dice, uma medida de
+                similaridade entre 0 e 1.
+              </li>
+              <li>
+                <strong>L<sub>Dice</sub>(A,B):</strong> A Distância de Dice ou
+                Perda de Dice, uma medida de dissimilaridade entre 0 e 1.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          id="propriedades"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔑 Propriedades Fundamentais
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            O Coeficiente de Dice e a Distância de Dice têm as seguintes
+            propriedades:
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">1. Intervalo (Range)</h3>
+              <p class="text-sm">
+                O Coeficiente de Dice (DSC) varia de 0 a 1:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >0 ≤ DSC(A, B) ≤ 1</code
+                >. Consequentemente, a Distância de Dice também varia de 0 a 1:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >0 ≤ L<sub>Dice</sub>(A, B) ≤ 1</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                2. Similaridade vs. Dissimilaridade
+              </h3>
+              <p class="text-sm">
+                DSC = 1 (L<sub>Dice</sub> = 0) indica que os conjuntos são
+                idênticos. DSC = 0 (L<sub>Dice</sub> = 1) indica que os
+                conjuntos são disjuntos (não têm elementos em comum).
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">3. Simetria</h3>
+              <p class="text-sm">
+                Ambas as medidas são simétricas:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >DSC(A, B) = DSC(B, A)</code
+                >
+                e
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >L<sub>Dice</sub>(A, B) = L<sub>Dice</sub>(B, A)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                4. Relação com o Índice de Jaccard
+              </h3>
+              <p class="text-sm">
+                O Coeficiente de Dice (DSC) está relacionado ao Índice de
+                Jaccard (J) pela fórmula:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >DSC = 2J / (J + 1)</code
+                >
+                e
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >J = DSC / (2 - DSC)</code
+                >. Ambos são monotonicamente relacionados.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                5. Não é uma Métrica Estrita (Distância de Dice)
+              </h3>
+              <p class="text-sm">
+                A Distância de Dice (<code
+                  class="text-xs bg-slate-200 p-1 rounded"
+                  >1 - DSC</code
+                >) não satisfaz necessariamente a desigualdade triangular em
+                todos os casos e, portanto, não é uma métrica de distância no
+                sentido matemático estrito. No entanto, é amplamente utilizada
+                como uma medida de dissimilaridade eficaz, especialmente como
+                função de perda.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            O Coeficiente de Dice e a Perda de Dice são particularmente úteis em
+            cenários de comparação de conjuntos e avaliação de segmentação.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Segmentação de Imagens (Principal Aplicação da Perda de Dice)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada como métrica de avaliação e função de perda para treinar
+                modelos de aprendizado profundo (redes neurais) para segmentar
+                objetos em imagens, especialmente em imagens médicas (ex:
+                tumores, órgãos). É robusta a desequilíbrios de classe.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                👁️ Visão Computacional
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Além da segmentação, pode ser usada para avaliar a sobreposição
+                de caixas delimitadoras (bounding boxes) em detecção de objetos.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📄 Recuperação de Informação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a similaridade entre conjuntos de palavras-chave ou
+                documentos.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🌿 Ecologia (Índice de Sørensen)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usado para quantificar a similaridade de espécies entre duas
+                comunidades ou amostras.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar conjuntos de genes, proteínas ou outras
+                características biológicas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                👍 Sistemas de Recomendação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a similaridade entre conjuntos de itens preferidos
+                por diferentes usuários.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Dice
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Experimente a Distância de Dice! Insira os elementos para dois
+            conjuntos (Conjunto A e Conjunto B) nos campos abaixo, separados por
+            vírgula. Os conjuntos, sua interseção, e os cálculos do Coeficiente
+            e da Distância de Dice serão exibidos dinamicamente.
+          </p>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-start"
+          >
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">
+                  Conjunto A
+                </h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Elementos separados por vírgula (ex:
+                  <code>maçã, banana, laranja</code>)
+                </p>
+                <input
+                  type="text"
+                  id="setAInputDice"
+                  value="maçã, banana, laranja, uva"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ex: a, b, c, d"
+                />
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">
+                  Conjunto B
+                </h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Elementos separados por vírgula (ex:
+                  <code>banana, laranja, pera, kiwi</code>)
+                </p>
+                <input
+                  type="text"
+                  id="setBInputDice"
+                  value="banana, laranja, pera, kiwi"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ex: c, d, e, f"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Resultados do Cálculo:
+                </h3>
+              </div>
+              <div class="stats-grid text-sm">
+                <p class="font-medium">Conjunto A:</p>
+                <div id="setADisplayDice" class="set-display">N/A</div>
+
+                <p class="font-medium">Conjunto B:</p>
+                <div id="setBDisplayDice" class="set-display">N/A</div>
+
+                <p class="font-medium">A ∩ B (Interseção):</p>
+                <div id="intersectionDisplayDice" class="set-display">N/A</div>
+              </div>
+              <div
+                class="stats-grid text-sm mt-4 pt-4 border-t border-slate-200"
+              >
+                <p class="font-medium">|A| (Tamanho de A):</p>
+                <p id="sizeADice" class="font-semibold text-slate-600">N/A</p>
+
+                <p class="font-medium">|B| (Tamanho de B):</p>
+                <p id="sizeBDice" class="font-semibold text-slate-600">N/A</p>
+
+                <p class="font-medium">|A ∩ B| (Tam. Interseção):</p>
+                <p
+                  id="intersectionSizeDice"
+                  class="font-semibold text-slate-600"
+                >
+                  N/A
+                </p>
+
+                <p class="font-medium mt-1">Coeficiente de Dice (DSC):</p>
+                <p
+                  id="diceCoefficientResult"
+                  class="font-semibold text-green-600 mt-1"
+                >
+                  N/A
+                </p>
+
+                <p class="text-lg font-medium mt-2">
+                  Distância de Dice (Perda):
+                </p>
+                <p
+                  id="diceDistanceResult"
+                  class="font-bold text-blue-600 text-2xl mt-2"
+                >
+                  N/A
+                </p>
+              </div>
+              <p id="diceErrorMessage" class="text-red-500 text-sm mt-2"></p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYearDice"></span> Aplicação Interativa da
+          Distância de Dice. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYearDice").textContent =
+          new Date().getFullYear();
+
+        const setAInputEl = document.getElementById("setAInputDice");
+        const setBInputEl = document.getElementById("setBInputDice");
+
+        const setADisplayEl = document.getElementById("setADisplayDice");
+        const setBDisplayEl = document.getElementById("setBDisplayDice");
+        const intersectionDisplayEl = document.getElementById(
+          "intersectionDisplayDice"
+        );
+
+        const sizeAEl = document.getElementById("sizeADice");
+        const sizeBEl = document.getElementById("sizeBDice");
+        const intersectionSizeEl = document.getElementById(
+          "intersectionSizeDice"
+        );
+        const diceCoefficientResultEl = document.getElementById(
+          "diceCoefficientResult"
+        );
+        const diceDistanceResultEl =
+          document.getElementById("diceDistanceResult");
+        const errorMessageEl = document.getElementById("diceErrorMessage");
+
+        function parseSetInput(inputValue) {
+          if (!inputValue.trim()) return new Set();
+          const items = inputValue
+            .split(",")
+            .map((item) => item.trim().toLowerCase())
+            .filter((item) => item !== "");
+          return new Set(items);
+        }
+
+        function setToString(setObj) {
+          if (setObj.size === 0) return "{ }";
+          return `{ ${Array.from(setObj).join(", ")} }`;
+        }
+
+        function calculateAndDisplayDice() {
+          errorMessageEl.textContent = "";
+          const setA = parseSetInput(setAInputEl.value);
+          const setB = parseSetInput(setBInputEl.value);
+
+          const intersection = new Set([...setA].filter((x) => setB.has(x)));
+
+          const sizeA = setA.size;
+          const sizeB = setB.size;
+          const intersectionSize = intersection.size;
+
+          let diceCoefficient = 0;
+          const sumOfSizes = sizeA + sizeB;
+
+          if (sumOfSizes === 0) {
+            diceCoefficient = 1;
+            errorMessageEl.textContent =
+              "Ambos os conjuntos estão vazios. Coeficiente de Dice definido como 1.";
+          } else {
+            diceCoefficient = (2 * intersectionSize) / sumOfSizes;
+          }
+
+          const diceDistance = 1 - diceCoefficient;
+
+          setADisplayEl.textContent = setToString(setA);
+          setBDisplayEl.textContent = setToString(setB);
+          intersectionDisplayEl.textContent = setToString(intersection);
+
+          sizeAEl.textContent = sizeA;
+          sizeBEl.textContent = sizeB;
+          intersectionSizeEl.textContent = intersectionSize;
+
+          diceCoefficientResultEl.textContent = diceCoefficient.toFixed(4);
+          diceDistanceResultEl.textContent = diceDistance.toFixed(4);
+        }
+
+        [setAInputEl, setBInputEl].forEach((input) => {
+          input.addEventListener("input", calculateAndDisplayDice);
+        });
+
+        calculateAndDisplayDice();
+      });
+    </script>
+  </body>
+</html>

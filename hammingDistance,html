@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Hamming Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 
+        Visualization & Content Choices:
+        - Definição, Fórmula, Exemplo, Aplicações: Text blocks, lists (HTML/Tailwind) to inform.
+        - Calculadora Interativa: HTML inputs for two strings. JS for input handling, Hamming distance calculation, and dynamic display of the comparison with highlighted differences.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #0d9488; /* teal-600 */
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .formula {
+        font-family: "Consolas", "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto;
+        white-space: pre-wrap; /* Allow wrapping for long strings */
+      }
+      .error-message {
+        color: #dc2626; /* red-600 */
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+      .comparison-char {
+        display: inline-block;
+        width: 1.5em; /* Adjust as needed */
+        text-align: center;
+        font-family: "Courier New", Courier, monospace;
+      }
+      .match {
+        color: #10b981; /* emerald-500 */
+      }
+      .mismatch {
+        color: #ef4444; /* red-500 */
+        font-weight: bold;
+      }
+      .comparison-marker {
+        color: #64748b; /* slate-500 */
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-teal-600">
+          ↔️ Distância de Hamming Interativa ↔️
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="exemplo"
+        >
+          Exemplo de Cálculo
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="calculadora"
+        >
+          Calculadora Interativa
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            O que é a Distância de Hamming?
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A <strong>Distância de Hamming</strong> é uma métrica para comparar
+            duas strings (sequências de símbolos) de igual comprimento. Ela é
+            definida como o número de posições nas quais os símbolos
+            correspondentes são diferentes. Em outras palavras, mede o número
+            mínimo de substituições necessárias para transformar uma string na
+            outra, ou o número de erros que transformaram uma string na outra.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            Essa medida foi introduzida por Richard Hamming em 1950 como parte
+            de seu trabalho em códigos de detecção e correção de erros. É uma
+            métrica fundamental em teoria da informação, teoria de códigos,
+            criptografia e bioinformática.
+          </p>
+          <p class="leading-relaxed">
+            <strong>Importante:</strong> A Distância de Hamming só se aplica a
+            strings de <strong>mesmo comprimento</strong>. Se as strings tiverem
+            comprimentos diferentes, a Distância de Hamming não é definida
+            (embora outras métricas, como a Distância de Levenshtein, possam ser
+            usadas nesses casos).
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            💡 Fórmula da Distância de Hamming
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A fórmula para calcular a Distância de Hamming é bastante direta.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Definição Formal
+            </h3>
+            <p class="mb-2">
+              Sejam duas strings <em>S<sub>1</sub></em> e
+              <em>S<sub>2</sub></em> de mesmo comprimento <em>n</em>:
+            </p>
+            <div class="formula mb-2">
+              S<sub>1</sub> = s<sub>1,1</sub> s<sub>1,2</sub> ... s<sub
+                >1,n</sub
+              >
+              <br />
+              S<sub>2</sub> = s<sub>2,1</sub> s<sub>2,2</sub> ... s<sub
+                >2,n</sub
+              >
+            </div>
+            <p class="mb-2">
+              A Distância de Hamming, D<sub>H</sub>(S<sub>1</sub>,
+              S<sub>2</sub>), é calculada como:
+            </p>
+            <div class="formula">
+              D<sub>H</sub>(S<sub>1</sub>, S<sub>2</sub>) = Σ<sub>i=1</sub
+              ><sup>n</sup> δ(s<sub>1,i</sub>, s<sub>2,i</sub>)
+            </div>
+            <p class="mt-2 mb-2">
+              Onde δ(a, b) é a função delta de Kronecker modificada:
+            </p>
+            <div class="formula">
+              δ(a, b) = 0 se a = b
+              <br />
+              δ(a, b) = 1 se a ≠ b
+            </div>
+            <p class="mt-3 leading-relaxed">
+              Em termos mais simples: conte o número de posições em que os
+              caracteres nas strings <em>S<sub>1</sub></em> e
+              <em>S<sub>2</sub></em> são diferentes.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="exemplo"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            ✍️ Exemplo de Cálculo
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Vamos calcular a Distância de Hamming entre as strings
+            "<code>karolin</code>" e "<code>kathrin</code>". Ambas têm
+            comprimento 7.
+          </p>
+          <div class="overflow-x-auto">
+            <table
+              class="min-w-full divide-y divide-slate-200 border border-slate-300 rounded-md"
+            >
+              <thead class="bg-slate-50">
+                <tr>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
+                    Posição (i)
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
+                    Caractere S<sub>1</sub>
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
+                    Caractere S<sub>2</sub>
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
+                    São Diferentes? (δ)
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-slate-200">
+                <tr>
+                  <td class="px-4 py-2">1</td>
+                  <td class="px-4 py-2 font-mono">k</td>
+                  <td class="px-4 py-2 font-mono">k</td>
+                  <td class="px-4 py-2">Não (0)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">2</td>
+                  <td class="px-4 py-2 font-mono">a</td>
+                  <td class="px-4 py-2 font-mono">a</td>
+                  <td class="px-4 py-2">Não (0)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">3</td>
+                  <td class="px-4 py-2 font-mono text-red-500">r</td>
+                  <td class="px-4 py-2 font-mono text-red-500">t</td>
+                  <td class="px-4 py-2 text-red-500 font-bold">Sim (1)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">4</td>
+                  <td class="px-4 py-2 font-mono text-red-500">o</td>
+                  <td class="px-4 py-2 font-mono text-red-500">h</td>
+                  <td class="px-4 py-2 text-red-500 font-bold">Sim (1)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">5</td>
+                  <td class="px-4 py-2 font-mono text-red-500">l</td>
+                  <td class="px-4 py-2 font-mono text-red-500">r</td>
+                  <td class="px-4 py-2 text-red-500 font-bold">Sim (1)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">6</td>
+                  <td class="px-4 py-2 font-mono">i</td>
+                  <td class="px-4 py-2 font-mono">i</td>
+                  <td class="px-4 py-2">Não (0)</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2">7</td>
+                  <td class="px-4 py-2 font-mono">n</td>
+                  <td class="px-4 py-2 font-mono">n</td>
+                  <td class="px-4 py-2">Não (0)</td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-slate-50">
+                <tr>
+                  <td colspan="3" class="px-4 py-2 text-right font-semibold">
+                    Distância de Hamming Total:
+                  </td>
+                  <td class="px-4 py-2 font-bold">
+                    0 + 0 + 1 + 1 + 1 + 0 + 0 = 3
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p class="mt-4 leading-relaxed">
+            Portanto, a Distância de Hamming entre "<code>karolin</code>" e
+            "<code>kathrin</code>" é <strong>3</strong>.
+          </p>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Hamming é uma métrica fundamental com diversas
+            aplicações em ciência da computação e áreas relacionadas:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📡 Teoria de Códigos (Códigos Corretores de Erros)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                É central para o design de códigos que podem detectar e corrigir
+                erros em dados transmitidos por canais ruidosos (ex: Hamming
+                codes). A distância mínima de Hamming de um código determina sua
+                capacidade de correção de erros.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada para medir a similaridade genética entre sequências de DNA
+                ou proteínas de mesmo comprimento, ajudando a identificar
+                mutações pontuais.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🔒 Criptografia
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em certos contextos criptográficos, a Distância de Hamming pode
+                ser usada para analisar propriedades de funções e cifras, como a
+                não-linearidade.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📊 Teoria da Informação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Mede a diferença entre palavras-código, o que é crucial para
+                entender os limites da compressão de dados e da transmissão
+                confiável.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                👁️ Reconhecimento de Padrões e Processamento de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Pode ser usada para comparar vetores de características binárias
+                em tarefas de classificação ou busca por similaridade.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🗣️ Processamento de Linguagem Natural (PLN)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em algumas tarefas específicas, como correção ortográfica para
+                erros de substituição única ou comparação de representações
+                binárias de palavras.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="calculadora"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🧮 Calculadora Interativa da Distância de Hamming
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Insira duas strings de <strong>mesmo comprimento</strong> nos campos
+            abaixo para calcular a Distância de Hamming entre elas. A
+            calculadora mostrará a distância e destacará as posições onde os
+            caracteres diferem.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label
+                for="string1"
+                class="block text-sm font-medium text-slate-700 mb-1"
+                >String 1:</label
+              >
+              <input
+                type="text"
+                id="string1"
+                name="string1"
+                class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 font-mono"
+                placeholder="Ex: karolin"
+              />
+            </div>
+            <div>
+              <label
+                for="string2"
+                class="block text-sm font-medium text-slate-700 mb-1"
+                >String 2:</label
+              >
+              <input
+                type="text"
+                id="string2"
+                name="string2"
+                class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 font-mono"
+                placeholder="Ex: kathrin"
+              />
+            </div>
+          </div>
+
+          <button
+            id="calculateButton"
+            class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out"
+          >
+            Calcular Distância
+          </button>
+
+          <div id="errorMessage" class="error-message mt-4"></div>
+
+          <div id="resultArea" class="mt-6 hidden">
+            <h3 class="text-xl font-semibold text-slate-700 mb-2">
+              Resultado:
+            </h3>
+            <p class="text-lg">
+              Distância de Hamming:
+              <strong id="hammingDistanceResult" class="text-teal-600"></strong>
+            </p>
+            <div class="mt-4">
+              <h4 class="text-md font-medium text-slate-600 mb-1">
+                Comparação Visual:
+              </h4>
+              <div
+                id="visualComparison"
+                class="formula p-4 bg-slate-50 rounded-md text-sm sm:text-base overflow-x-auto"
+              ></div>
+              <p class="text-xs text-slate-500 mt-2">
+                Caracteres em <span class="mismatch">vermelho</span> indicam
+                diferenças.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da Dist. de
+          Hamming. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const string1Input = document.getElementById("string1");
+        const string2Input = document.getElementById("string2");
+        const calculateButton = document.getElementById("calculateButton");
+        const errorMessageDiv = document.getElementById("errorMessage");
+        const resultAreaDiv = document.getElementById("resultArea");
+        const hammingDistanceResultEl = document.getElementById(
+          "hammingDistanceResult"
+        );
+        const visualComparisonDiv = document.getElementById("visualComparison");
+
+        calculateButton.addEventListener("click", () => {
+          const s1 = string1Input.value;
+          const s2 = string2Input.value;
+
+          errorMessageDiv.textContent = "";
+          resultAreaDiv.classList.add("hidden");
+          visualComparisonDiv.innerHTML = "";
+
+          if (s1.length === 0 || s2.length === 0) {
+            errorMessageDiv.textContent = "Por favor, insira ambas as strings.";
+            return;
+          }
+
+          if (s1.length !== s2.length) {
+            errorMessageDiv.textContent =
+              "As strings devem ter o mesmo comprimento para calcular a Distância de Hamming.";
+            return;
+          }
+
+          let distance = 0;
+          let comparisonHtmlS1 = "<div>S1: ";
+          let comparisonHtmlS2 = "<div>S2: ";
+          let comparisonMarkers = "<div>    ";
+
+          for (let i = 0; i < s1.length; i++) {
+            const char1 = s1[i];
+            const char2 = s2[i];
+
+            if (char1 !== char2) {
+              distance++;
+              comparisonHtmlS1 += `<span class="comparison-char mismatch">${char1}</span>`;
+              comparisonHtmlS2 += `<span class="comparison-char mismatch">${char2}</span>`;
+              comparisonMarkers += `<span class="comparison-char mismatch">↑</span>`;
+            } else {
+              comparisonHtmlS1 += `<span class="comparison-char match">${char1}</span>`;
+              comparisonHtmlS2 += `<span class="comparison-char match">${char2}</span>`;
+              comparisonMarkers += `<span class="comparison-char comparison-marker"> </span>`;
+            }
+          }
+          comparisonHtmlS1 += "</div>";
+          comparisonHtmlS2 += "</div>";
+          comparisonMarkers += "</div>";
+
+          hammingDistanceResultEl.textContent = distance;
+          visualComparisonDiv.innerHTML =
+            comparisonHtmlS1 + comparisonHtmlS2 + comparisonMarkers;
+          resultAreaDiv.classList.remove("hidden");
+        });
+
+        if (string1Input.value && string2Input.value) {
+        }
+      });
+    </script>
+  </body>
+</html>

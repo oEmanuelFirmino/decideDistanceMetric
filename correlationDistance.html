@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Correlação Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição, Fórmula, Propriedades, Aplicações: Text blocks, lists (HTML/Tailwind) to inform. 
+        - Visualizador: HTML text inputs for numerical vectors, JS for input parsing, statistical calculations (mean, std dev, covariance, Pearson correlation), Correlation Distance calculation, and dynamic canvas/text updates. Canvas displays a scatter plot of the paired data points and a line of best fit.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #2563eb; /* blue-600 */
+        color: #2563eb;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 300px; /* Adjusted for scatter plot */
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #correlationCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 350px;
+        }
+      }
+      @media (min-width: 768px) {
+        /* md breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+      .formula {
+        font-family: "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto; /* Allow horizontal scroll for long formulas */
+        white-space: pre; /* Preserve whitespace and prevent wrapping */
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          📈 Distância de Correlação Interativa 📉
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="propriedades"
+        >
+          Propriedades
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            O que é a Distância de Correlação?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Esta seção introduz a Distância de Correlação. Você aprenderá que
+            ela é uma medida de dissimilaridade entre dois vetores de dados
+            numéricos, baseada em quão fortemente eles estão linearmente
+            relacionados.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância de Correlação</strong> é derivada do coeficiente
+            de correlação de Pearson (ρ). Enquanto o coeficiente de Pearson mede
+            a força e a direção de uma relação linear entre duas variáveis
+            (variando de -1 para correlação negativa perfeita, a +1 para
+            correlação positiva perfeita, com 0 indicando nenhuma correlação
+            linear), a Distância de Correlação transforma essa medida em uma
+            noção de dissimilaridade.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            Comumente, a Distância de Correlação (d) é definida como
+            <code class="text-xs bg-slate-200 p-1 rounded">d = 1 - ρ</code>.
+            Nesta formulação:
+          </p>
+          <ul class="list-disc list-inside space-y-1 pl-4 mb-3">
+            <li>
+              Se ρ = 1 (correlação positiva perfeita), d = 0 (sem distância,
+              máxima similaridade).
+            </li>
+            <li>Se ρ = 0 (sem correlação linear), d = 1.</li>
+            <li>
+              Se ρ = -1 (correlação negativa perfeita), d = 2 (máxima
+              distância).
+            </li>
+          </ul>
+          <p class="leading-relaxed">
+            Ela é útil para comparar séries temporais, perfis de expressão
+            gênica, ou quaisquer conjuntos de dados onde a tendência de variação
+            conjunta é mais importante do que as magnitudes absolutas dos
+            valores.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            💡 Fórmula da Distância de Correlação e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A Distância de Correlação é baseada no Coeficiente de Correlação de
+            Pearson (ρ).
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Coeficiente de Correlação de Pearson (ρ)
+            </h3>
+            <p class="mb-2">
+              Para dois vetores X = (x<sub>1</sub>, ..., x<sub>n</sub>) e Y =
+              (y<sub>1</sub>, ..., y<sub>n</sub>) de tamanho n:
+            </p>
+            <div class="formula">
+              ρ(X,Y) = cov(X,Y) / (σ<sub>X</sub> * σ<sub>Y</sub>)
+            </div>
+            <p class="my-2">Onde:</p>
+            <ul class="list-disc list-inside space-y-1 pl-4 mb-2 text-sm">
+              <li><strong>cov(X,Y)</strong> é a covariância entre X e Y:</li>
+            </ul>
+            <div class="formula text-sm">
+              cov(X,Y) = Σ [ (xᵢ - x̄) * (yᵢ - ȳ) ] / n
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (para população)
+              <br />
+              cov(X,Y) = Σ [ (xᵢ - x̄) * (yᵢ - ȳ) ] / (n-1) &nbsp;&nbsp; (para
+              amostra)
+            </div>
+            <p class="my-2 text-sm">
+              Neste visualizador, usamos a definição de amostra para covariância
+              e desvio padrão, que é comum em estatística aplicada.
+            </p>
+            <ul class="list-disc list-inside space-y-1 pl-4 mb-2 text-sm">
+              <li>
+                <strong>σ<sub>X</sub></strong> é o desvio padrão de X:
+              </li>
+            </ul>
+            <div class="formula text-sm">
+              σ<sub>X</sub> = √ [ Σ (xᵢ - x̄)² / (n-1) ]
+            </div>
+            <ul class="list-disc list-inside space-y-1 pl-4 mb-2 text-sm">
+              <li>
+                <strong>σ<sub>Y</sub></strong> é o desvio padrão de Y:
+              </li>
+            </ul>
+            <div class="formula text-sm">
+              σ<sub>Y</sub> = √ [ Σ (yᵢ - ȳ)² / (n-1) ]
+            </div>
+            <p class="my-2">
+              Alternativamente, a fórmula de ρ pode ser escrita diretamente
+              como:
+            </p>
+            <div class="formula">
+              ρ = Σ((xᵢ - x̄)(yᵢ - ȳ)) / ( √[Σ(xᵢ - x̄)²] * √[Σ(yᵢ - ȳ)²] )
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Distância de Correlação (d)
+            </h3>
+            <p class="mb-2">A Distância de Correlação é então:</p>
+            <div class="formula">d(X,Y) = 1 - ρ(X,Y)</div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed">
+              <li>
+                <strong>X, Y:</strong> Os dois vetores de dados numéricos sendo
+                comparados.
+              </li>
+              <li>
+                <strong>xᵢ, yᵢ:</strong> O i-ésimo elemento dos vetores X e Y,
+                respectivamente.
+              </li>
+              <li>
+                <strong>x̄ (<code>meanX</code>), ȳ (<code>meanY</code>):</strong>
+                As médias aritméticas dos elementos em X e Y.
+              </li>
+              <li>
+                <strong>σ<sub>X</sub>, σ<sub>Y</sub>:</strong> Os desvios padrão
+                de X e Y, medindo a dispersão dos dados em torno de suas médias.
+              </li>
+              <li>
+                <strong>cov(X,Y):</strong> A covariância entre X e Y, medindo
+                como as duas variáveis mudam juntas.
+              </li>
+              <li><strong>Σ:</strong> Símbolo de somatório.</li>
+              <li>
+                <strong>n:</strong> O número de elementos em cada vetor (os
+                vetores devem ter o mesmo comprimento).
+              </li>
+            </ul>
+            <p class="mt-3 text-sm text-slate-500">
+              Nota: Para que a correlação seja calculável e significativa, n
+              deve ser pelo menos 2, e os desvios padrão de X e Y devem ser
+              diferentes de zero.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="propriedades"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔑 Propriedades Fundamentais
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Correlação (definida como
+            <code class="text-xs bg-slate-200 p-1 rounded">1 - ρ</code>) possui
+            as seguintes propriedades como uma medida de dissimilaridade:
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">1. Intervalo (Range)</h3>
+              <p class="text-sm">
+                A distância varia de 0 a 2:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >0 ≤ d(X,Y) ≤ 2</code
+                >. Um valor de 0 significa correlação positiva perfeita (ρ=1), 1
+                significa ausência de correlação linear (ρ=0), e 2 significa
+                correlação negativa perfeita (ρ=-1).
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">2. Não-negatividade</h3>
+              <p class="text-sm">
+                A distância é sempre maior ou igual a zero:
+                <code class="text-xs bg-slate-200 p-1 rounded">d(X,Y) ≥ 0</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">3. Identidade</h3>
+              <p class="text-sm">
+                Se
+                <code class="text-xs bg-slate-200 p-1 rounded">d(X,Y) = 0</code
+                >, então
+                <code class="text-xs bg-slate-200 p-1 rounded">ρ(X,Y) = 1</code
+                >, o que significa que X e Y são perfeitamente correlacionados
+                positivamente (Y = aX + b com a > 0). Se X = Y, então d(X,X) =
+                0.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">4. Simetria</h3>
+              <p class="text-sm">
+                A distância de X a Y é a mesma que a distância de Y a X:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d(X,Y) = d(Y,X)</code
+                >
+                porque
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >ρ(X,Y) = ρ(Y,X)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                5. Desigualdade Triangular
+              </h3>
+              <p class="text-sm">
+                A Distância de Correlação
+                <code class="text-xs bg-slate-200 p-1 rounded">1 - ρ</code> não
+                satisfaz necessariamente a desigualdade triangular e, portanto,
+                não é uma métrica estrita em todos os casos. No entanto,
+                transformações como a distância angular (<code
+                  class="text-xs bg-slate-200 p-1 rounded"
+                  >√(2(1-ρ))</code
+                >
+                ou
+                <code class="text-xs bg-slate-200 p-1 rounded">acos(ρ)</code>)
+                podem ser métricas. Apesar disso,
+                <code class="text-xs bg-slate-200 p-1 rounded">1 - ρ</code> é
+                amplamente utilizada como uma medida de dissimilaridade eficaz.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Correlação é valiosa em campos onde a relação de
+            tendência entre variáveis é crucial.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática e Genômica
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para agrupar genes com padrões de expressão semelhantes em
+                diferentes condições ou amostras (análise de co-expressão).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                💹 Análise Financeira
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a dissimilaridade no movimento de preços de
+                diferentes ativos financeiros, auxiliando na diversificação de
+                portfólios e análise de risco.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📊 Mineração de Dados e Aprendizado de Máquina
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em algoritmos de agrupamento (clustering) e classificação para
+                séries temporais ou outros dados vetoriais onde o padrão de
+                variação é importante. Seleção de características.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🛒 Sistemas de Recomendação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para encontrar usuários ou itens com padrões de avaliação
+                semelhantes, mesmo que as classificações absolutas sejam
+                diferentes.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧠 Neurociência
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para analisar a conectividade funcional entre diferentes regiões
+                do cérebro com base na correlação de suas atividades ao longo do
+                tempo.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🗣️ Processamento de Sinais
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar a semelhança entre diferentes sinais ou formas de
+                onda.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Correlação
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Experimente a Distância de Correlação! Insira dois vetores de dados
+            numéricos (mesmo comprimento, mínimo 2 pontos, separados por
+            vírgula). O gráfico de dispersão mostrará os pontos (xᵢ, yᵢ) e uma
+            linha de tendência. As estatísticas e a distância calculada serão
+            exibidas.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">Vetor X</h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Números separados por vírgula (ex: <code>1,2,3,4,5</code>)
+                </p>
+                <input
+                  type="text"
+                  id="vectorXInput"
+                  value="1, 2, 3, 4, 5"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">Vetor Y</h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Números separados por vírgula (ex: <code>2,4,5,4,6</code>)
+                </p>
+                <input
+                  type="text"
+                  id="vectorYInput"
+                  value="2, 4, 5, 4, 6"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div id="statsResults" class="mt-6 space-y-3 text-sm stats-grid">
+                <p class="font-semibold">Média X (x̄):</p>
+                <span id="meanXResult">N/A</span>
+                <p class="font-semibold">Média Y (ȳ):</p>
+                <span id="meanYResult">N/A</span>
+                <p class="font-semibold">Desvio Padrão X (σ<sub>X</sub>):</p>
+                <span id="stdDevXResult">N/A</span>
+                <p class="font-semibold">Desvio Padrão Y (σ<sub>Y</sub>):</p>
+                <span id="stdDevYResult">N/A</span>
+                <p class="font-semibold">Covariância(X,Y):</p>
+                <span id="covarianceResult">N/A</span>
+                <p class="font-semibold">Coef. Correlação (ρ):</p>
+                <span id="pearsonResult" class="font-bold">N/A</span>
+                <p class="text-lg font-medium mt-2">Distância de Correlação:</p>
+                <p
+                  id="correlationDistanceResult"
+                  class="font-bold text-blue-600 text-2xl"
+                >
+                  N/A
+                </p>
+              </div>
+              <p id="errorMessage" class="text-red-500 text-sm mt-2"></p>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="correlationCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                Gráfico de dispersão dos pontos (Xᵢ, Yᵢ) com linha de melhor
+                ajuste.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYearCorrelation"></span> Aplicação Interativa
+          da Distância de Correlação. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYearCorrelation").textContent =
+          new Date().getFullYear();
+
+        const vectorXInputEl = document.getElementById("vectorXInput");
+        const vectorYInputEl = document.getElementById("vectorYInput");
+
+        const meanXResultEl = document.getElementById("meanXResult");
+        const meanYResultEl = document.getElementById("meanYResult");
+        const stdDevXResultEl = document.getElementById("stdDevXResult");
+        const stdDevYResultEl = document.getElementById("stdDevYResult");
+        const covarianceResultEl = document.getElementById("covarianceResult");
+        const pearsonResultEl = document.getElementById("pearsonResult");
+        const correlationDistanceResultEl = document.getElementById(
+          "correlationDistanceResult"
+        );
+        const errorMessageEl = document.getElementById("errorMessage");
+
+        const canvas = document.getElementById("correlationCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function parseVectorInput(inputValue) {
+          return inputValue
+            .split(",")
+            .map((item) => parseFloat(item.trim()))
+            .filter((num) => !isNaN(num));
+        }
+
+        function calculateMean(arr) {
+          if (arr.length === 0) return 0;
+          return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+        }
+
+        function calculateStdDev(arr, mean) {
+          if (arr.length < 2) return 0;
+          const variance =
+            arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
+            (arr.length - 1);
+          return Math.sqrt(variance);
+        }
+
+        function calculateCovariance(arrX, arrY, meanX, meanY) {
+          if (arrX.length < 2) return 0;
+          let sum = 0;
+          for (let i = 0; i < arrX.length; i++) {
+            sum += (arrX[i] - meanX) * (arrY[i] - meanY);
+          }
+          return sum / (arrX.length - 1);
+        }
+
+        function calculatePearsonCorrelation(
+          arrX,
+          arrY,
+          meanX,
+          meanY,
+          stdDevX,
+          stdDevY
+        ) {
+          if (stdDevX === 0 || stdDevY === 0) {
+            return NaN;
+          }
+          const covariance = calculateCovariance(arrX, arrY, meanX, meanY);
+          return covariance / (stdDevX * stdDevY);
+        }
+
+        function calculateAndDisplay() {
+          errorMessageEl.textContent = "";
+          const vectorX = parseVectorInput(vectorXInputEl.value);
+          const vectorY = parseVectorInput(vectorYInputEl.value);
+
+          if (vectorX.length !== vectorY.length) {
+            errorMessageEl.textContent =
+              "Os vetores X e Y devem ter o mesmo comprimento.";
+            clearResults();
+            drawScatterPlot([], [], NaN, NaN, NaN, NaN, NaN);
+            return;
+          }
+          if (vectorX.length < 2) {
+            errorMessageEl.textContent =
+              "São necessários pelo menos 2 pontos de dados para calcular a correlação.";
+            clearResults();
+            drawScatterPlot([], [], NaN, NaN, NaN, NaN, NaN);
+            return;
+          }
+
+          const meanX = calculateMean(vectorX);
+          const meanY = calculateMean(vectorY);
+          const stdDevX = calculateStdDev(vectorX, meanX);
+          const stdDevY = calculateStdDev(vectorY, meanY);
+
+          const covariance = calculateCovariance(
+            vectorX,
+            vectorY,
+            meanX,
+            meanY
+          );
+
+          const pearsonCorrelation = calculatePearsonCorrelation(
+            vectorX,
+            vectorY,
+            meanX,
+            meanY,
+            stdDevX,
+            stdDevY
+          );
+
+          meanXResultEl.textContent = meanX.toFixed(4);
+          meanYResultEl.textContent = meanY.toFixed(4);
+          stdDevXResultEl.textContent = stdDevX.toFixed(4);
+          stdDevYResultEl.textContent = stdDevY.toFixed(4);
+          covarianceResultEl.textContent = covariance.toFixed(4);
+
+          if (isNaN(pearsonCorrelation)) {
+            pearsonResultEl.textContent = "Indefinido";
+            pearsonResultEl.classList.remove("text-green-600", "text-red-600");
+            pearsonResultEl.classList.add("text-orange-500");
+            correlationDistanceResultEl.textContent = "Indefinido";
+            errorMessageEl.textContent =
+              "Correlação indefinida (verifique se há variação nos dados).";
+            drawScatterPlot(
+              vectorX,
+              vectorY,
+              meanX,
+              meanY,
+              stdDevX,
+              stdDevY,
+              NaN
+            );
+          } else {
+            pearsonResultEl.textContent = pearsonCorrelation.toFixed(4);
+            if (pearsonCorrelation > 0) {
+              pearsonResultEl.classList.remove(
+                "text-red-600",
+                "text-orange-500"
+              );
+              pearsonResultEl.classList.add("text-green-600");
+            } else if (pearsonCorrelation < 0) {
+              pearsonResultEl.classList.remove(
+                "text-green-600",
+                "text-orange-500"
+              );
+              pearsonResultEl.classList.add("text-red-600");
+            } else {
+              pearsonResultEl.classList.remove(
+                "text-green-600",
+                "text-red-600",
+                "text-orange-500"
+              );
+            }
+
+            const correlationDistance = 1 - pearsonCorrelation;
+            correlationDistanceResultEl.textContent =
+              correlationDistance.toFixed(4);
+            drawScatterPlot(
+              vectorX,
+              vectorY,
+              meanX,
+              meanY,
+              stdDevX,
+              stdDevY,
+              pearsonCorrelation
+            );
+          }
+        }
+
+        function clearResults() {
+          meanXResultEl.textContent = "N/A";
+          meanYResultEl.textContent = "N/A";
+          stdDevXResultEl.textContent = "N/A";
+          stdDevYResultEl.textContent = "N/A";
+          covarianceResultEl.textContent = "N/A";
+          pearsonResultEl.textContent = "N/A";
+          pearsonResultEl.classList.remove(
+            "text-green-600",
+            "text-red-600",
+            "text-orange-500"
+          );
+          correlationDistanceResultEl.textContent = "N/A";
+        }
+
+        function drawScatterPlot(
+          arrX,
+          arrY,
+          meanX,
+          meanY,
+          stdDevX,
+          stdDevY,
+          correlation
+        ) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          if (arrX.length === 0) return;
+
+          const padding = 40;
+          const minXData = Math.min(...arrX);
+          const maxXData = Math.max(...arrX);
+          const minYData = Math.min(...arrY);
+          const maxYData = Math.max(...arrY);
+
+          let dataWidth = maxXData - minXData;
+          let dataHeight = maxYData - minYData;
+
+          if (dataWidth === 0)
+            dataWidth = minXData === 0 ? 10 : Math.abs(minXData) * 0.5 || 10;
+          if (dataHeight === 0)
+            dataHeight = minYData === 0 ? 10 : Math.abs(minYData) * 0.5 || 10;
+
+          const effectiveMinX = minXData - dataWidth * 0.1;
+          const effectiveMaxX = maxXData + dataWidth * 0.1;
+          const effectiveMinY = minYData - dataHeight * 0.1;
+          const effectiveMaxY = maxYData + dataHeight * 0.1;
+
+          dataWidth = effectiveMaxX - effectiveMinX;
+          dataHeight = effectiveMaxY - effectiveMinY;
+
+          const scaleX = (width - 2 * padding) / dataWidth;
+          const scaleY = (height - 2 * padding) / dataHeight;
+
+          const toCanvasX = (dataVal) =>
+            padding + (dataVal - effectiveMinX) * scaleX;
+          const toCanvasY = (dataVal) =>
+            height - (padding + (dataVal - effectiveMinY) * scaleY);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.lineWidth = 1;
+          ctx.moveTo(padding, toCanvasY(effectiveMinY));
+          ctx.lineTo(width - padding, toCanvasY(effectiveMinY));
+          ctx.moveTo(toCanvasX(effectiveMinX), padding);
+          ctx.lineTo(toCanvasX(effectiveMinX), height - padding);
+          ctx.stroke();
+
+          if (effectiveMinX <= 0 && effectiveMaxX >= 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "#a0aec0";
+            ctx.moveTo(toCanvasX(0), padding);
+            ctx.lineTo(toCanvasX(0), height - padding);
+            ctx.stroke();
+          }
+          if (effectiveMinY <= 0 && effectiveMaxY >= 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "#a0aec0";
+            ctx.moveTo(padding, toCanvasY(0));
+            ctx.lineTo(width - padding, toCanvasY(0));
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = "#3b82f6";
+          for (let i = 0; i < arrX.length; i++) {
+            ctx.beginPath();
+            ctx.arc(toCanvasX(arrX[i]), toCanvasY(arrY[i]), 4, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+
+          if (!isNaN(correlation) && stdDevX > 0) {
+            const slope = correlation * (stdDevY / stdDevX);
+            const intercept = meanY - slope * meanX;
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+
+            let lineStartX = effectiveMinX;
+            let lineStartY = slope * lineStartX + intercept;
+            let lineEndX = effectiveMaxX;
+            let lineEndY = slope * lineEndX + intercept;
+
+            ctx.moveTo(toCanvasX(lineStartX), toCanvasY(lineStartY));
+            ctx.lineTo(toCanvasX(lineEndX), toCanvasY(lineEndY));
+            ctx.stroke();
+          } else if (!isNaN(correlation) && stdDevX === 0 && stdDevY > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+            ctx.moveTo(toCanvasX(meanX), toCanvasY(effectiveMinY));
+            ctx.lineTo(toCanvasX(meanX), toCanvasY(effectiveMaxY));
+            ctx.stroke();
+          } else if (!isNaN(correlation) && stdDevY === 0 && stdDevX > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2;
+            ctx.moveTo(toCanvasX(effectiveMinX), toCanvasY(meanY));
+            ctx.lineTo(toCanvasX(effectiveMaxX), toCanvasY(meanY));
+            ctx.stroke();
+          }
+        }
+
+        [vectorXInputEl, vectorYInputEl].forEach((input) => {
+          input.addEventListener("input", calculateAndDisplay);
+        });
+
+        function setupCanvas() {
+          const style = getComputedStyle(canvas.parentElement);
+          canvas.width = parseInt(style.width) || 300;
+          canvas.height = parseInt(style.height) || 300;
+          calculateAndDisplay();
+        }
+
+        if (typeof ResizeObserver !== "undefined") {
+          new ResizeObserver(() => {
+            setupCanvas();
+          }).observe(canvas.parentElement);
+        } else {
+          window.addEventListener("resize", setupCanvas);
+        }
+
+        setupCanvas();
+      });
+    </script>
+  </body>
+</html>

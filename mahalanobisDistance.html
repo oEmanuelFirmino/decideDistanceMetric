@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Mahalanobis Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição, Fórmula, Intuição, Aplicações: Text blocks, lists (HTML/Tailwind) to inform. Mathematical formulas rendered with appropriate styling.
+        - Visualizador: HTML Canvas for custom 2D drawing of the point, distribution mean, and covariance ellipse. JS for input handling, Mahalanobis distance calculation (including matrix inversion and matrix/vector operations), and dynamic canvas/text updates. The ellipse's shape and orientation are derived from the eigenvalues and eigenvectors of the covariance matrix. Error handling for non-invertible covariance matrices is included.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #0d9488; /* teal-600 */
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 350px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #mahalanobisCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+      @media (min-width: 768px) {
+        /* md breakpoint */
+        .canvas-container {
+          height: 450px;
+        }
+      }
+      .formula {
+        font-family: "Consolas", "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto;
+        white-space: pre;
+      }
+      .matrix-input input {
+        width: 60px; /* Fixed width for matrix inputs */
+      }
+      .error-message {
+        color: #dc2626; /* red-600 */
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-teal-600">
+          🌐 Distância de Mahalanobis Interativa 🌐
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="intuicao"
+        >
+          Intuição e Vantagens
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            O que é a Distância de Mahalanobis?
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Esta seção introduz a Distância de Mahalanobis, uma medida
+            estatística que generaliza a ideia de distância entre um ponto e uma
+            distribuição de pontos. Você aprenderá como ela difere da Distância
+            Euclidiana ao levar em conta a correlação entre variáveis e as suas
+            respectivas variâncias, tornando-a uma ferramenta poderosa para
+            análise de dados multivariados.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância de Mahalanobis</strong> é uma medida de
+            distância estatística introduzida por P. C. Mahalanobis em 1936. Ela
+            mede a distância entre um ponto P e uma distribuição D. Uma
+            característica chave é que ela leva em consideração a
+            <strong>covariância</strong> entre as variáveis da distribuição.
+            Isso significa que ela não trata todas as direções no espaço de
+            dados da mesma forma, mas sim se ajusta à "forma" e "orientação" da
+            nuvem de pontos da distribuição.
+          </p>
+          <p class="leading-relaxed">
+            Diferentemente da Distância Euclidiana, que mede a distância em
+            linha reta assumindo que as variáveis são independentes e têm a
+            mesma variância (ou seja, o espaço é isotrópico), a Distância de
+            Mahalanobis transforma os dados em um espaço onde as variáveis são
+            descorrelacionadas e têm variância unitária antes de calcular a
+            distância. Isso a torna particularmente útil para identificar
+            outliers ou medir similaridade em dados multivariados onde as
+            variáveis podem estar correlacionadas e ter diferentes escalas.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            💡 Fórmula da Distância de Mahalanobis e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Aqui, detalhamos a expressão matemática da Distância de Mahalanobis.
+            Serão explicados cada componente da fórmula, incluindo o vetor de
+            observação, o vetor de médias da distribuição e, crucialmente, a
+            matriz de covariância inversa. Entender esses elementos é
+            fundamental para apreciar como a distância é calculada e o que ela
+            representa.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula Geral
+            </h3>
+            <p class="mb-2">
+              A Distância de Mahalanobis (D<sub>M</sub>) de um vetor de
+              observação multivariado <em>x</em> = (x<sub>1</sub>,
+              x<sub>2</sub>, ..., x<sub>N</sub>)<sup>T</sup> de um conjunto de
+              observações com média <em>μ</em> = (μ<sub>1</sub>, μ<sub>2</sub>,
+              ..., μ<sub>N</sub>)<sup>T</sup> e matriz de covariância
+              <em>S</em> é definida como:
+            </p>
+            <div class="formula">
+              D<sub>M</sub>(x) = √((x - μ)<sup>T</sup> S<sup>-1</sup> (x - μ))
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+              Muitas vezes, a distância é referida na sua forma quadrática,
+              D<sub>M</sub><sup>2</sup>(x), para evitar a raiz quadrada e
+              simplificar cálculos.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-3 pl-2 leading-relaxed">
+              <li>
+                <strong>x:</strong> É o vetor do ponto de observação (o ponto
+                para o qual queremos calcular a distância).
+              </li>
+              <li>
+                <strong>μ (mu):</strong> É o vetor de médias da distribuição de
+                referência (o "centro" da distribuição).
+              </li>
+              <li>
+                <strong>S:</strong> É a matriz de covariância da distribuição de
+                referência. Esta matriz descreve como as diferentes variáveis na
+                distribuição variam juntas.
+                <ul class="list-circle list-inside ml-6 mt-1 space-y-1 text-sm">
+                  <li>
+                    Os elementos na diagonal de S são as variâncias de cada
+                    variável.
+                  </li>
+                  <li>
+                    Os elementos fora da diagonal são as covariâncias entre
+                    pares de variáveis.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <strong>S<sup>-1</sup>:</strong> É a inversa da matriz de
+                covariância (também chamada de matriz de precisão).
+              </li>
+              <li>
+                <strong>(x - μ):</strong> É o vetor de diferenças entre o ponto
+                de observação e a média da distribuição.
+              </li>
+              <li>
+                <strong><sup>T</sup> (Transposto):</strong> Indica a
+                transposição de um vetor ou matriz. (x - μ)<sup>T</sup> é um
+                vetor linha.
+              </li>
+              <li><strong>√ :</strong> Símbolo da raiz quadrada.</li>
+            </ul>
+            <p
+              class="mt-4 p-3 bg-sky-50 border-l-4 border-sky-400 text-sky-700 rounded text-sm leading-relaxed"
+            >
+              <strong>Essência:</strong> A Distância de Mahalanobis mede quantas
+              "desvios padrão generalizados" o ponto <em>x</em> está do centro
+              <em>μ</em> da distribuição, levando em conta a estrutura de
+              correlação e variância dos dados definida por <em>S</em>.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="intuicao"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🧠 Intuição e Vantagens
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Por que usar a Distância de Mahalanobis em vez da mais simples
+            Distância Euclidiana? Esta seção explora a intuição por trás dela e
+            suas principais vantagens. Discutiremos como ela lida com dados
+            correlacionados, diferentes escalas entre variáveis e sua eficácia
+            na detecção de outliers multivariados, oferecendo uma perspectiva
+            mais robusta sobre a "distância" em espaços de dados complexos.
+          </p>
+          <ul class="space-y-4">
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                1. Leva em Conta a Correlação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Se duas variáveis são altamente correlacionadas (por exemplo,
+                altura e peso), a Distância Euclidiana pode ser enganosa. A
+                Distância de Mahalanobis ajusta-se a essa correlação. Imagine
+                uma nuvem de pontos elíptica: a distância "real" ao longo do
+                eixo principal da elipse é diferente da distância ao longo do
+                eixo menor. Mahalanobis entende isso.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                2. Invariante à Escala
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Se você mudar a escala de uma variável (por exemplo, de metros
+                para centímetros), a Distância Euclidiana mudará drasticamente.
+                A Distância de Mahalanobis é independente da escala das
+                variáveis porque ela efetivamente "normaliza" cada variável pela
+                sua variância.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                3. Detecção de Outliers Multivariados
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Um ponto pode não ser um outlier em nenhuma variável
+                individualmente, mas pode ser um outlier quando as variáveis são
+                consideradas em conjunto. A Distância de Mahalanobis é excelente
+                para detectar esses outliers multivariados, pois considera a
+                "forma" da distribuição dos dados.
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                4. Espaço Transformado
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Pode-se pensar na Distância de Mahalanobis como o cálculo da
+                Distância Euclidiana em um espaço transformado, onde os dados
+                originais foram rotacionados e escalonados de forma que a matriz
+                de covariância se torne a matriz identidade (ou seja, as novas
+                variáveis são descorrelacionadas e têm variância unitária).
+              </p>
+            </li>
+            <li class="p-3 bg-slate-50 rounded-md">
+              <h3 class="font-semibold text-slate-700">
+                Comparação com Distância Euclidiana:
+              </h3>
+              <p class="text-sm leading-relaxed">
+                A Distância Euclidiana é um caso especial da Distância de
+                Mahalanobis que ocorre quando a matriz de covariância é a matriz
+                identidade (S = I), ou seja, quando as variáveis são
+                descorrelacionadas e todas têm variância 1.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Devido às suas propriedades únicas, a Distância de Mahalanobis é uma
+            ferramenta valiosa em diversos campos da estatística e aprendizado
+            de máquina. Esta seção apresentará algumas de suas aplicações mais
+            comuns, como detecção de anomalias, classificação de padrões e
+            análise de clusters, onde a estrutura de covariância dos dados é
+            importante.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🚨 Detecção de Outliers (Anomalias)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Uma das aplicações mais comuns. Pontos com alta Distância de
+                Mahalanobis em relação ao centro de uma distribuição são
+                considerados outliers prováveis, especialmente em dados
+                multivariados.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧩 Classificação de Padrões
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada como métrica de distância em algoritmos de classificação.
+                Um novo ponto é atribuído à classe cuja Distância de Mahalanobis
+                ao centro (média) da classe é a menor.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📊 Análise de Agrupamento (Clustering)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Pode ser usada para medir a dissimilaridade entre clusters ou
+                entre um ponto e um cluster, especialmente quando os clusters
+                têm formas elípticas e diferentes orientações.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🏭 Controle de Qualidade Estatístico
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para monitorar processos multivariados e detectar quando um
+                processo está saindo do controle, identificando observações que
+                se desviam significativamente do comportamento normal.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática e Quimiometria
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na análise de dados de expressão gênica, espectroscopia, entre
+                outros, onde os conjuntos de dados são frequentemente
+                multivariados e com correlações complexas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🛰️ Sensoriamento Remoto
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na classificação de pixels em imagens de satélite com base em
+                suas assinaturas espectrais multivariadas.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Mahalanobis
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Explore a Distância de Mahalanobis em um ambiente 2D! Defina as
+            coordenadas de um <strong>Ponto de Observação (P)</strong>. Em
+            seguida, defina os parâmetros da
+            <strong>Distribuição de Referência</strong>: sua
+            <strong>Média (μ)</strong> e sua
+            <strong>Matriz de Covariância (S)</strong>. A matriz de covariância
+            é definida pela Variância de X (σ²x), Variância de Y (σ²y) e a
+            Covariância entre X e Y (σxy).
+          </p>
+          <p class="mb-6 leading-relaxed">
+            O gráfico mostrará o ponto P, a média μ, e uma elipse representando
+            o contorno de 1 desvio padrão da distribuição. A Distância de
+            Mahalanobis calculada será exibida. Experimente variar os valores,
+            especialmente a covariância, para ver como a "forma" da distribuição
+            afeta a distância!
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-4">
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Ponto de Observação P (x, y)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="pointX"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Px"
+                  />
+                  <input
+                    type="number"
+                    id="pointY"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Py"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Média da Distribuição μ (μx, μy)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="meanX"
+                    value="0"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="μx"
+                  />
+                  <input
+                    type="number"
+                    id="meanY"
+                    value="0"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="μy"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Matriz de Covariância S
+                </h3>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1 matrix-input">
+                    <span class="text-sm w-20">Var(X) (σ²x):</span>
+                    <input
+                      type="number"
+                      id="varX"
+                      value="2"
+                      min="0.01"
+                      step="0.1"
+                      class="p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                  <div class="flex items-center gap-1 matrix-input">
+                    <span class="text-sm w-20">Var(Y) (σ²y):</span>
+                    <input
+                      type="number"
+                      id="varY"
+                      value="1"
+                      min="0.01"
+                      step="0.1"
+                      class="p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                  <div class="flex items-center gap-1 matrix-input">
+                    <span class="text-sm w-20">Cov(X,Y) (σxy):</span>
+                    <input
+                      type="number"
+                      id="covXY"
+                      value="0.5"
+                      step="0.1"
+                      class="p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 space-y-2">
+                <p class="text-md">
+                  <strong>Dist. Mahalanobis (D<sub>M</sub>):</strong>
+                </p>
+                <p
+                  id="mahalanobisDistanceResult"
+                  class="font-bold text-teal-600 text-xl"
+                >
+                  N/A
+                </p>
+                <p id="mahalanobisError" class="error-message"></p>
+                <details class="text-xs text-slate-500">
+                  <summary>Detalhes do Cálculo</summary>
+                  <p class="mt-1">
+                    <strong>S<sup>-1</sup> (Inversa da Covariância):</strong>
+                  </p>
+                  <pre
+                    id="invCovMatrixInfo"
+                    class="bg-slate-100 p-1 rounded text-xs"
+                  ></pre>
+                  <p class="mt-1">
+                    <strong>Determinante de S:</strong>
+                    <span id="detSInfo"></span>
+                  </p>
+                </details>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="mahalanobisCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                A elipse representa o contorno de 1 desvio padrão da
+                distribuição.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da Dist. de
+          Mahalanobis. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+            if (targetTab === "visualizador") {
+              requestAnimationFrame(() => sizeCanvasAndDraw());
+            }
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const pointXInput = document.getElementById("pointX");
+        const pointYInput = document.getElementById("pointY");
+        const meanXInput = document.getElementById("meanX");
+        const meanYInput = document.getElementById("meanY");
+        const varXInput = document.getElementById("varX");
+        const varYInput = document.getElementById("varY");
+        const covXYInput = document.getElementById("covXY");
+
+        const distanceResultEl = document.getElementById(
+          "mahalanobisDistanceResult"
+        );
+        const errorEl = document.getElementById("mahalanobisError");
+        const invCovMatrixInfoEl = document.getElementById("invCovMatrixInfo");
+        const detSInfoEl = document.getElementById("detSInfo");
+
+        const canvas = document.getElementById("mahalanobisCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateAndDraw() {
+          errorEl.textContent = "";
+          const px = parseFloat(pointXInput.value) || 0;
+          const py = parseFloat(pointYInput.value) || 0;
+          const mux = parseFloat(meanXInput.value) || 0;
+          const muy = parseFloat(meanYInput.value) || 0;
+          const varX = parseFloat(varXInput.value);
+          const varY = parseFloat(varYInput.value);
+          const covXY = parseFloat(covXYInput.value) || 0;
+
+          if (isNaN(varX) || isNaN(varY)) {
+            errorEl.textContent = "Variâncias devem ser números.";
+            distanceResultEl.textContent = "N/A";
+            invCovMatrixInfoEl.textContent = "N/A";
+            detSInfoEl.textContent = "N/A";
+            clearCanvas();
+            return;
+          }
+
+          if (varX <= 0 || varY <= 0) {
+            errorEl.textContent = "Variâncias (σ²x, σ²y) devem ser positivas.";
+            distanceResultEl.textContent = "N/A";
+            invCovMatrixInfoEl.textContent = "N/A";
+            detSInfoEl.textContent = "N/A";
+            clearCanvas();
+            return;
+          }
+
+          const detS = varX * varY - covXY * covXY;
+          detSInfoEl.textContent = detS.toFixed(4);
+
+          if (detS <= 0) {
+            errorEl.textContent =
+              "Determinante da matriz de covariância deve ser positivo (S não singular e positiva definida). Verifique os valores de variância e covariância.";
+            distanceResultEl.textContent = "N/A";
+            invCovMatrixInfoEl.textContent = "N/A";
+            clearCanvas();
+            return;
+          }
+
+          const invDetS = 1 / detS;
+          const s_inv_00 = invDetS * varY;
+          const s_inv_01 = invDetS * -covXY;
+          const s_inv_10 = invDetS * -covXY;
+          const s_inv_11 = invDetS * varX;
+
+          invCovMatrixInfoEl.textContent = `[[${s_inv_00.toFixed(
+            3
+          )}, ${s_inv_01.toFixed(3)}]\n [${s_inv_10.toFixed(
+            3
+          )}, ${s_inv_11.toFixed(3)}]]`;
+
+          const dx = px - mux;
+          const dy = py - muy;
+
+          const temp_x = s_inv_00 * dx + s_inv_01 * dy;
+          const temp_y = s_inv_10 * dx + s_inv_11 * dy;
+
+          const d_sq = dx * temp_x + dy * temp_y;
+
+          if (d_sq < 0) {
+            errorEl.textContent =
+              "Distância quadrática negativa. Verifique a matriz de covariância.";
+            distanceResultEl.textContent = "N/A";
+            clearCanvas();
+            return;
+          }
+          const distance = Math.sqrt(d_sq);
+          distanceResultEl.textContent = distance.toFixed(4);
+
+          drawVisuals(px, py, mux, muy, varX, varY, covXY);
+        }
+
+        function clearCanvas() {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+        }
+
+        function drawVisuals(px, py, mux, muy, varX, varY, covXY) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          const a = varX;
+          const b = covXY;
+          const d = varY;
+
+          const trace = a + d;
+          const determinant = a * d - b * b;
+
+          const term_sqrt = Math.sqrt(
+            Math.max(0, trace * trace - 4 * determinant)
+          );
+          const eigVal1 = (trace + term_sqrt) / 2;
+          const eigVal2 = (trace - term_sqrt) / 2;
+
+          let eigVec1x, eigVec1y, angle;
+          if (b === 0) {
+            eigVec1x = a >= d ? 1 : 0;
+            eigVec1y = a >= d ? 0 : 1;
+          } else {
+            eigVec1x = b;
+            eigVec1y = eigVal1 - a;
+          }
+          angle = Math.atan2(eigVec1y, eigVec1x);
+
+          const radiusX_ellipse = Math.sqrt(Math.max(0, eigVal1));
+          const radiusY_ellipse = Math.sqrt(Math.max(0, eigVal2));
+
+          const padding = 50;
+          const pointsForScaling = [
+            { x: mux, y: muy },
+            { x: px, y: py },
+            {
+              x: mux + radiusX_ellipse * Math.cos(angle) * 2,
+              y: muy + radiusX_ellipse * Math.sin(angle) * 2,
+            },
+            {
+              x: mux - radiusX_ellipse * Math.cos(angle) * 2,
+              y: muy - radiusX_ellipse * Math.sin(angle) * 2,
+            },
+            {
+              x: mux + radiusY_ellipse * Math.cos(angle + Math.PI / 2) * 2,
+              y: muy + radiusY_ellipse * Math.sin(angle + Math.PI / 2) * 2,
+            },
+            {
+              x: mux - radiusY_ellipse * Math.cos(angle + Math.PI / 2) * 2,
+              y: muy - radiusY_ellipse * Math.sin(angle + Math.PI / 2) * 2,
+            },
+          ];
+
+          let minDataX = Infinity,
+            maxDataX = -Infinity,
+            minDataY = Infinity,
+            maxDataY = -Infinity;
+          pointsForScaling.forEach((pt) => {
+            minDataX = Math.min(minDataX, pt.x);
+            maxDataX = Math.max(maxDataX, pt.x);
+            minDataY = Math.min(minDataY, pt.y);
+            maxDataY = Math.max(maxDataY, pt.y);
+          });
+
+          let dataWidth = maxDataX - minDataX;
+          let dataHeight = maxDataY - minDataY;
+          if (dataWidth === 0) dataWidth = 10;
+          if (dataHeight === 0) dataHeight = 10;
+
+          const scaleX = (width - 2 * padding) / dataWidth;
+          const scaleY = (height - 2 * padding) / dataHeight;
+          const scale = Math.min(scaleX, scaleY) * 0.9;
+
+          const canvasOriginX =
+            padding + (width - 2 * padding - dataWidth * scale) / 2;
+          const canvasOriginY =
+            padding + (height - 2 * padding - dataHeight * scale) / 2;
+
+          const toCanvasX = (dataX) =>
+            canvasOriginX + (dataX - minDataX) * scale;
+          const toCanvasY = (dataY) =>
+            height - (canvasOriginY + (dataY - minDataY) * scale);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.lineWidth = 1;
+          const xAxisY =
+            minDataY <= 0 && maxDataY >= 0
+              ? toCanvasY(0)
+              : height - padding / 2;
+          ctx.moveTo(padding / 2, xAxisY);
+          ctx.lineTo(width - padding / 2, xAxisY);
+          const yAxisX =
+            minDataX <= 0 && maxDataX >= 0 ? toCanvasX(0) : padding / 2;
+          ctx.moveTo(yAxisX, padding / 2);
+          ctx.lineTo(yAxisX, height - padding / 2);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.ellipse(
+            toCanvasX(mux),
+            toCanvasY(muy),
+            radiusX_ellipse * scale,
+            radiusY_ellipse * scale,
+            -angle,
+            0,
+            2 * Math.PI
+          );
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          const cMeanX = toCanvasX(mux);
+          const cMeanY = toCanvasY(muy);
+          ctx.beginPath();
+          ctx.arc(cMeanX, cMeanY, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#0ea5e9";
+          ctx.fill();
+          ctx.fillStyle = "#0369a1";
+          ctx.fillText(
+            `μ(${mux.toFixed(1)},${muy.toFixed(1)})`,
+            cMeanX + 8,
+            cMeanY - 8
+          );
+
+          const cPx = toCanvasX(px);
+          const cPy = toCanvasY(py);
+          ctx.beginPath();
+          ctx.arc(cPx, cPy, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = "#f97316";
+          ctx.fill();
+          ctx.fillStyle = "#c2410c";
+          ctx.fillText(
+            `P(${px.toFixed(1)},${py.toFixed(1)})`,
+            cPx + 8,
+            cPy - 8
+          );
+        }
+
+        function sizeCanvasAndDraw() {
+          const style = getComputedStyle(canvas.parentElement);
+          canvas.width = parseInt(style.width);
+          canvas.height = parseInt(style.height);
+          calculateAndDraw();
+        }
+
+        [
+          pointXInput,
+          pointYInput,
+          meanXInput,
+          meanYInput,
+          varXInput,
+          varYInput,
+          covXYInput,
+        ].forEach((input) => {
+          input.addEventListener("input", calculateAndDraw);
+        });
+
+        sizeCanvasAndDraw();
+
+        new ResizeObserver(() => {
+          sizeCanvasAndDraw();
+        }).observe(canvas.parentElement);
+      });
+    </script>
+  </body>
+</html>

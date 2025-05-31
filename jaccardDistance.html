@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Jaccard Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #2563eb; /* blue-600 */
+        color: #2563eb;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .formula {
+        font-family: "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto; /* Allow horizontal scroll for long formulas */
+        white-space: pre; /* Preserve whitespace and prevent wrapping */
+      }
+      .set-display {
+        background-color: #f8fafc; /* slate-50 */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        min-height: 30px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          📊 Distância de Jaccard Interativa 📊
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="propriedades"
+        >
+          Propriedades
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            O que é a Distância de Jaccard?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            Esta seção introduz o conceito da Distância de Jaccard. Você
+            aprenderá que ela é uma medida de dissimilaridade entre dois
+            conjuntos, útil para comparar quão diferentes eles são.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância de Jaccard</strong>, também conhecida como
+            dissimilaridade de Jaccard, mede o quão diferentes são dois
+            conjuntos finitos. Ela é calculada como 1 menos o
+            <strong>Índice de Jaccard</strong> (ou Coeficiente de Jaccard), que
+            mede a similaridade entre os conjuntos. Quanto maior a Distância de
+            Jaccard, mais diferentes são os conjuntos, variando de 0 (conjuntos
+            idênticos) a 1 (conjuntos completamente disjuntos sem elementos em
+            comum).
+          </p>
+          <p class="leading-relaxed">
+            É amplamente utilizada em áreas como mineração de dados, recuperação
+            de informação, ecologia (para medir similaridade de espécies entre
+            habitats) e processamento de linguagem natural (para comparar a
+            similaridade de documentos baseados em seus vocabulários).
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            💡 Fórmula da Distância de Jaccard e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Aqui, exploramos a matemática por trás da Distância de Jaccard.
+            Serão apresentadas as fórmulas para o Índice de Jaccard e a
+            Distância de Jaccard, com a explicação dos termos envolvidos, como
+            interseção e união de conjuntos.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Índice de Jaccard (Similaridade)
+            </h3>
+            <p class="mb-2">
+              Para dois conjuntos A e B, o Índice de Jaccard, J(A,B), é a razão
+              entre o tamanho da interseção e o tamanho da união dos conjuntos:
+            </p>
+            <div class="formula">J(A,B) = |A ∩ B| / |A ∪ B|</div>
+            <p class="mt-2 text-sm text-slate-500">
+              Se A e B são ambos vazios, J(A,B) é definido como 1.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Distância de Jaccard (Dissimilaridade)
+            </h3>
+            <p class="mb-2">
+              A Distância de Jaccard, d<sub>J</sub>(A,B), é calculada como 1
+              menos o Índice de Jaccard:
+            </p>
+            <div class="formula">d<sub>J</sub>(A,B) = 1 - J(A,B)</div>
+            <p class="mt-1 mb-2">Alternativamente, pode ser expressa como:</p>
+            <div class="formula">
+              d<sub>J</sub>(A,B) = (|A ∪ B| - |A ∩ B|) / |A ∪ B|
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+              Se A e B são ambos vazios, d<sub>J</sub>(A,B) é 0. Se |A ∪ B| = 0,
+              a distância é 0.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos
+            </h3>
+            <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed">
+              <li>
+                <strong>A, B:</strong> São os dois conjuntos finitos que estão
+                sendo comparados.
+              </li>
+              <li>
+                <strong>|S|:</strong> Representa a cardinalidade (ou tamanho) do
+                conjunto S, ou seja, o número de elementos distintos em S.
+              </li>
+              <li>
+                <strong>A ∩ B:</strong> A interseção dos conjuntos A e B. É o
+                conjunto de elementos que são comuns a A e B.
+              </li>
+              <li>
+                <strong>A ∪ B:</strong> A união dos conjuntos A e B. É o
+                conjunto de todos os elementos que estão em A, ou em B, ou em
+                ambos (contando elementos comuns apenas uma vez).
+              </li>
+              <li>
+                <strong>J(A,B):</strong> O Índice de Jaccard, uma medida de
+                similaridade entre 0 e 1.
+              </li>
+              <li>
+                <strong>d<sub>J</sub>(A,B):</strong> A Distância de Jaccard, uma
+                medida de dissimilaridade entre 0 e 1.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          id="propriedades"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔑 Propriedades Fundamentais
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Jaccard possui propriedades matemáticas importantes
+            que a tornam uma "métrica" bem definida. Esta seção detalha essas
+            propriedades. Compreender essas características ajuda a entender por
+            que a Distância de Jaccard é tão amplamente utilizada.
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">1. Não-negatividade</h3>
+              <p class="text-sm">
+                A distância entre dois conjuntos é sempre maior ou igual a zero:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>J</sub>(A, B) ≥ 0</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                2. Identidade dos Indiscerníveis
+              </h3>
+              <p class="text-sm">
+                A distância entre dois conjuntos é zero se e somente se os
+                conjuntos são idênticos:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>J</sub>(A, B) = 0</code
+                >
+                se e somente se
+                <code class="text-xs bg-slate-200 p-1 rounded">A = B</code>.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">3. Simetria</h3>
+              <p class="text-sm">
+                A distância de A a B é a mesma que a distância de B a A:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>J</sub>(A, B) = d<sub>J</sub>(B, A)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">
+                4. Desigualdade Triangular
+              </h3>
+              <p class="text-sm">
+                Para quaisquer três conjuntos A, B e C, a distância de A a C não
+                é maior que a soma das distâncias de A a B e de B a C:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >d<sub>J</sub>(A, C) ≤ d<sub>J</sub>(A, B) + d<sub>J</sub>(B,
+                  C)</code
+                >.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700">5. Intervalo (Range)</h3>
+              <p class="text-sm">
+                A Distância de Jaccard está sempre entre 0 e 1, inclusive:
+                <code class="text-xs bg-slate-200 p-1 rounded"
+                  >0 ≤ d<sub>J</sub>(A, B) ≤ 1</code
+                >.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Jaccard é uma ferramenta versátil para comparar
+            conjuntos em diversas áreas. Nesta seção, exploraremos algumas de
+            suas aplicações mais significativas.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📄 Similaridade de Documentos
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada para detectar plágio ou encontrar documentos
+                semanticamente semelhantes, tratando cada documento como um
+                conjunto de palavras (termos) ou n-gramas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🛍️ Sistemas de Recomendação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para encontrar usuários com gostos similares (comparando
+                conjuntos de itens que eles avaliaram ou compraram) ou itens
+                similares (comparando conjuntos de usuários que interagiram com
+                eles).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar conjuntos de genes, proteínas ou outras sequências
+                biológicas, ajudando a identificar similaridades funcionais ou
+                evolutivas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Análise de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em tarefas como segmentação de imagens ou detecção de objetos,
+                comparando conjuntos de pixels ou características de diferentes
+                regiões de uma imagem.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🌐 Detecção de Comunidades em Redes
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a sobreposição entre os vizinhos de dois nós em uma
+                rede, ajudando a identificar comunidades ou clusters.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🌿 Ecologia
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para comparar a composição de espécies entre diferentes locais
+                ou amostras, avaliando a similaridade da biodiversidade.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-blue-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Jaccard
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Experimente a Distância de Jaccard em ação! Insira os elementos para
+            dois conjuntos (Conjunto A e Conjunto B) nos campos abaixo,
+            separados por vírgula. Os conjuntos, sua interseção, união e os
+            cálculos da Distância de Jaccard serão exibidos dinamicamente.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">
+                  Conjunto A
+                </h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Elementos separados por vírgula (ex:
+                  <code>maçã, banana, laranja</code>)
+                </p>
+                <input
+                  type="text"
+                  id="setAInput"
+                  value="maçã, banana, laranja"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ex: a, b, c, d"
+                />
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-1">
+                  Conjunto B
+                </h3>
+                <p class="text-xs text-slate-500 mb-2">
+                  Elementos separados por vírgula (ex:
+                  <code>banana, laranja, uva</code>)
+                </p>
+                <input
+                  type="text"
+                  id="setBInput"
+                  value="banana, laranja, uva"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ex: c, d, e, f"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Resultados do Cálculo:
+                </h3>
+              </div>
+              <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                <p class="font-medium">Conjunto A:</p>
+                <div id="setADisplay" class="set-display">N/A</div>
+
+                <p class="font-medium">Conjunto B:</p>
+                <div id="setBDisplay" class="set-display">N/A</div>
+
+                <p class="font-medium">A ∩ B (Interseção):</p>
+                <div id="intersectionDisplay" class="set-display">N/A</div>
+
+                <p class="font-medium">A ∪ B (União):</p>
+                <div id="unionDisplay" class="set-display">N/A</div>
+              </div>
+              <div
+                class="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-200"
+              >
+                <p class="font-medium">|A ∩ B|:</p>
+                <p id="intersectionSize" class="font-semibold text-slate-600">
+                  N/A
+                </p>
+
+                <p class="font-medium">|A ∪ B|:</p>
+                <p id="unionSize" class="font-semibold text-slate-600">N/A</p>
+
+                <p class="font-medium">Índice de Jaccard J(A,B):</p>
+                <p id="jaccardIndexResult" class="font-semibold text-green-600">
+                  N/A
+                </p>
+
+                <p class="text-lg font-medium mt-2">
+                  Distância de Jaccard d<sub>J</sub>(A,B):
+                </p>
+                <p
+                  id="jaccardDistanceResult"
+                  class="font-bold text-blue-600 text-2xl mt-2"
+                >
+                  N/A
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da
+          Distância de Jaccard. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const setAInputEl = document.getElementById("setAInput");
+        const setBInputEl = document.getElementById("setBInput");
+
+        const setADisplayEl = document.getElementById("setADisplay");
+        const setBDisplayEl = document.getElementById("setBDisplay");
+        const intersectionDisplayEl = document.getElementById(
+          "intersectionDisplay"
+        );
+        const unionDisplayEl = document.getElementById("unionDisplay");
+
+        const intersectionSizeEl = document.getElementById("intersectionSize");
+        const unionSizeEl = document.getElementById("unionSize");
+        const jaccardIndexResultEl =
+          document.getElementById("jaccardIndexResult");
+        const jaccardDistanceResultEl = document.getElementById(
+          "jaccardDistanceResult"
+        );
+
+        function parseSetInput(inputValue) {
+          if (!inputValue.trim()) return new Set();
+          const items = inputValue
+            .split(",")
+            .map((item) => item.trim().toLowerCase())
+            .filter((item) => item !== "");
+          return new Set(items);
+        }
+
+        function setToString(set) {
+          if (set.size === 0) return "{ }";
+          return `{ ${Array.from(set).join(", ")} }`;
+        }
+
+        function calculateAndDisplay() {
+          const setA = parseSetInput(setAInputEl.value);
+          const setB = parseSetInput(setBInputEl.value);
+
+          const intersection = new Set([...setA].filter((x) => setB.has(x)));
+          const union = new Set([...setA, ...setB]);
+
+          const intersectionSize = intersection.size;
+          const unionSize = union.size;
+
+          let jaccardIndex = 0;
+          if (unionSize === 0) {
+            jaccardIndex = 1;
+          } else {
+            jaccardIndex = intersectionSize / unionSize;
+          }
+
+          const jaccardDistance = 1 - jaccardIndex;
+
+          setADisplayEl.textContent = setToString(setA);
+          setBDisplayEl.textContent = setToString(setB);
+          intersectionDisplayEl.textContent = setToString(intersection);
+          unionDisplayEl.textContent = setToString(union);
+
+          intersectionSizeEl.textContent = intersectionSize;
+          unionSizeEl.textContent = unionSize;
+          jaccardIndexResultEl.textContent = jaccardIndex.toFixed(4);
+          jaccardDistanceResultEl.textContent = jaccardDistance.toFixed(4);
+        }
+
+        [setAInputEl, setBInputEl].forEach((input) => {
+          input.addEventListener("input", calculateAndDisplay);
+        });
+
+        calculateAndDisplay();
+      });
+    </script>
+  </body>
+</html>

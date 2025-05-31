@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Chebyshev Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 
+        Visualization & Content Choices:
+        - Definição, Fórmula, Intuição, Aplicações: Text blocks, lists (HTML/Tailwind).
+        - Visualizador Interativo (2D): HTML inputs for coordinates of two points. JS for calculation and dynamic canvas drawing. The visualization will show the two points and a square region illustrating the maximum coordinate difference.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #0d9488; /* teal-600 */
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .formula {
+        font-family: "Consolas", "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .error-message {
+        color: #dc2626; /* red-600 */
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 450px; /* Adjusted for a potentially simpler visualization */
+        height: 350px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #chebyshevCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-teal-600">
+          ♟️ Distância de Chebyshev Interativa ♟️
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="intuicao"
+        >
+          Intuição (Xadrez)
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            O que é a Distância de Chebyshev?
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A <strong>Distância de Chebyshev</strong>, também conhecida como
+            distância L<sub>∞</sub> (L-infinito), distância máxima ou métrica do
+            tabuleiro de xadrez, é uma métrica onde a distância entre dois
+            vetores (ou pontos) é a maior de suas diferenças ao longo de
+            qualquer dimensão coordenada.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            Em outras palavras, se você tem dois pontos em um espaço
+            n-dimensional, a Distância de Chebyshev entre eles é a diferença
+            absoluta máxima entre suas coordenadas em qualquer uma das
+            dimensões.
+          </p>
+          <p class="leading-relaxed">
+            Esta métrica é nomeada em homenagem ao matemático russo Pafnuty
+            Chebyshev. É um caso especial da métrica L<sub>p</sub> (ou distância
+            de Minkowski) quando p tende ao infinito.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            💡 Fórmula da Distância de Chebyshev
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A fórmula para calcular a Distância de Chebyshev é baseada na
+            diferença máxima das coordenadas.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Definição Formal (n-Dimensões)
+            </h3>
+            <p class="mb-2">
+              Sejam dois pontos (ou vetores) <em>P</em> e <em>Q</em> em um
+              espaço n-dimensional:
+            </p>
+            <div class="formula mb-2">
+              P = (p<sub>1</sub>, p<sub>2</sub>, ..., p<sub>n</sub>)
+              <br />
+              Q = (q<sub>1</sub>, q<sub>2</sub>, ..., q<sub>n</sub>)
+            </div>
+            <p class="mb-2">
+              A Distância de Chebyshev, D<sub>Chebyshev</sub>(P, Q), é definida
+              como:
+            </p>
+            <div class="formula">
+              D<sub>Chebyshev</sub>(P, Q) = max<sub>i</sub> ( |p<sub>i</sub> -
+              q<sub>i</sub>| )
+            </div>
+            <p class="mt-2 leading-relaxed">
+              Isso significa que você calcula a diferença absoluta entre as
+              coordenadas correspondentes de P e Q para cada dimensão e, em
+              seguida, pega o maior desses valores.
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Caso Bidimensional (2D)
+            </h3>
+            <p class="mb-2">
+              Para dois pontos P = (x<sub>1</sub>, y<sub>1</sub>) e Q =
+              (x<sub>2</sub>, y<sub>2</sub>) no plano:
+            </p>
+            <div class="formula">
+              D<sub>Chebyshev</sub>(P, Q) = max ( |x<sub>2</sub> -
+              x<sub>1</sub>|, |y<sub>2</sub> - y<sub>1</sub>| )
+            </div>
+          </div>
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Caso Tridimensional (3D)
+            </h3>
+            <p class="mb-2">
+              Para dois pontos P = (x<sub>1</sub>, y<sub>1</sub>, z<sub>1</sub>)
+              e Q = (x<sub>2</sub>, y<sub>2</sub>, z<sub>2</sub>) no espaço:
+            </p>
+            <div class="formula">
+              D<sub>Chebyshev</sub>(P, Q) = max ( |x<sub>2</sub> -
+              x<sub>1</sub>|, |y<sub>2</sub> - y<sub>1</sub>|, |z<sub>2</sub> -
+              z<sub>1</sub>| )
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="intuicao"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🧠 Intuição: Movimentos do Rei no Xadrez
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Uma maneira muito intuitiva de entender a Distância de Chebyshev é
+            pensar nos movimentos de um <strong>rei</strong> em um tabuleiro de
+            xadrez.
+          </p>
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Chess_klt45.svg/120px-Chess_klt45.svg.png"
+            alt="[Ícone de um Rei de Xadrez]"
+            class="mx-auto my-4 h-20 w-20"
+            onerror="this.onerror=null; this.src='https://placehold.co/120x120/e2e8f0/334155?text=Rei'; this.alt='[Ícone de um Rei de Xadrez]';"
+          />
+          <p class="mb-3 leading-relaxed">
+            Um rei pode se mover uma casa em qualquer direção: horizontal,
+            vertical ou diagonal. A Distância de Chebyshev entre duas casas em
+            um tabuleiro de xadrez é o número mínimo de movimentos que o rei
+            precisa fazer para ir de uma casa para a outra.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            Por exemplo, se o rei está na casa (x<sub>1</sub>, y<sub>1</sub>) e
+            quer ir para (x<sub>2</sub>, y<sub>2</sub>):
+          </p>
+          <ul class="list-disc list-inside space-y-2 pl-2 leading-relaxed mb-3">
+            <li>
+              Ele precisa se mover |x<sub>2</sub> - x<sub>1</sub>| casas na
+              direção horizontal.
+            </li>
+            <li>
+              Ele precisa se mover |y<sub>2</sub> - y<sub>1</sub>| casas na
+              direção vertical.
+            </li>
+          </ul>
+          <p class="leading-relaxed">
+            Como o rei pode se mover diagonalmente (o que conta como um único
+            movimento, cobrindo uma unidade em x e uma unidade em y
+            simultaneamente), o número total de movimentos será determinado pela
+            maior das duas diferenças (horizontal ou vertical). Se ele precisa
+            se mover 3 casas na horizontal e 5 na vertical, ele pode fazer 3
+            movimentos diagonais e depois 2 movimentos verticais, totalizando 5
+            movimentos. Este é o máximo das diferenças.
+          </p>
+          <p
+            class="mt-4 p-3 bg-sky-50 border-l-4 border-sky-400 text-sky-700 rounded text-sm leading-relaxed"
+          >
+            <strong>Visualmente:</strong> Se um ponto está no centro de um
+            quadrado e outro ponto está em qualquer lugar na borda ou dentro
+            desse quadrado, a Distância de Chebyshev entre eles é metade do
+            comprimento do lado do menor quadrado (com lados paralelos aos eixos
+            coordenados) que contém ambos os pontos.
+          </p>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância de Chebyshev encontra aplicações em diversas áreas onde
+            o "movimento" ou a diferença máxima ao longo de um eixo é o fator
+            dominante:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🚚 Logística e Armazenamento
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em sistemas de armazenamento onde guindastes se movem em eixos X
+                e Y simultaneamente, o tempo para alcançar um item pode ser
+                modelado pela Distância de Chebyshev, pois o guindaste para
+                quando a maior das distâncias (X ou Y) é coberta.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🎮 Teoria dos Jogos e IA para Jogos
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Como visto na analogia do xadrez, é usada para calcular
+                distâncias em jogos baseados em grade onde unidades podem se
+                mover em 8 direções (como muitos RPGs e jogos de estratégia).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Processamento de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada em algumas operações de vizinhança, como a definição de
+                uma janela quadrada ao redor de um pixel.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🤖 Robótica
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para planeamento de caminhos em robôs que podem mover seus eixos
+                independentemente e simultaneamente, onde o tempo de movimento é
+                limitado pelo eixo que leva mais tempo.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📈 Análise de Cluster e Classificação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Pode ser usada como uma métrica de distância em algoritmos de
+                aprendizado de máquina, especialmente quando a magnitude máxima
+                da diferença entre características é mais significativa do que a
+                soma das diferenças (Euclidiana) ou a soma das diferenças
+                absolutas (Manhattan).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🔢 Teoria da Aproximação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na matemática, a norma L<sub>∞</sub> (que corresponde à
+                Distância de Chebyshev) é usada para medir a "distância" entre
+                funções, representando o máximo desvio absoluto.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Chebyshev (2D)
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Explore a Distância de Chebyshev em 2D! Defina as coordenadas de
+            dois pontos (P e Q). O gráfico mostrará os pontos e um quadrado
+            centrado em P, cujo lado é o dobro da Distância de Chebyshev. O
+            ponto Q estará na borda deste quadrado.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-4">
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Ponto P (x<sub>1</sub>, y<sub>1</sub>)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="p1x"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P1x"
+                  />
+                  <input
+                    type="number"
+                    id="p1y"
+                    value="1"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P1y"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Ponto Q (x<sub>2</sub>, y<sub>2</sub>)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="p2x"
+                    value="4"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P2x"
+                  />
+                  <input
+                    type="number"
+                    id="p2y"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P2y"
+                  />
+                </div>
+              </div>
+              <div class="mt-4 space-y-2">
+                <p class="text-md">
+                  <strong>Dist. Chebyshev (D<sub>C</sub>):</strong>
+                </p>
+                <p
+                  id="chebyshevDistanceResult"
+                  class="font-bold text-teal-600 text-xl"
+                >
+                  N/A
+                </p>
+                <p id="chebyshevError" class="error-message"></p>
+                <details class="text-xs text-slate-500">
+                  <summary>Detalhes do Cálculo</summary>
+                  <p class="mt-1">
+                    |x<sub>2</sub> - x<sub>1</sub>| =
+                    <span id="deltaXResult">N/A</span>
+                  </p>
+                  <p>
+                    |y<sub>2</sub> - y<sub>1</sub>| =
+                    <span id="deltaYResult">N/A</span>
+                  </p>
+                </details>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="chebyshevCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                O quadrado representa a região onde todos os pontos estão a uma
+                Distância de Chebyshev menor ou igual a D<sub>C</sub> de P. O
+                ponto Q está na borda.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da Dist. de
+          Chebyshev. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+            if (targetTab === "visualizador") {
+              requestAnimationFrame(() => sizeCanvasAndDraw());
+            }
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const p1xInput = document.getElementById("p1x");
+        const p1yInput = document.getElementById("p1y");
+        const p2xInput = document.getElementById("p2x");
+        const p2yInput = document.getElementById("p2y");
+
+        const distanceResultEl = document.getElementById(
+          "chebyshevDistanceResult"
+        );
+        const errorEl = document.getElementById("chebyshevError");
+        const deltaXEl = document.getElementById("deltaXResult");
+        const deltaYEl = document.getElementById("deltaYResult");
+
+        const canvas = document.getElementById("chebyshevCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateAndDraw() {
+          errorEl.textContent = "";
+          const p1x = parseFloat(p1xInput.value);
+          const p1y = parseFloat(p1yInput.value);
+          const p2x = parseFloat(p2xInput.value);
+          const p2y = parseFloat(p2yInput.value);
+
+          if (isNaN(p1x) || isNaN(p1y) || isNaN(p2x) || isNaN(p2y)) {
+            errorEl.textContent =
+              "Por favor, insira valores numéricos válidos para todas as coordenadas.";
+            distanceResultEl.textContent = "N/A";
+            deltaXEl.textContent = "N/A";
+            deltaYEl.textContent = "N/A";
+            clearCanvas();
+            return;
+          }
+
+          const deltaX = Math.abs(p2x - p1x);
+          const deltaY = Math.abs(p2y - p1y);
+          const distance = Math.max(deltaX, deltaY);
+
+          distanceResultEl.textContent = distance.toFixed(4);
+          deltaXEl.textContent = deltaX.toFixed(4);
+          deltaYEl.textContent = deltaY.toFixed(4);
+
+          drawVisuals(p1x, p1y, p2x, p2y, distance);
+        }
+
+        function clearCanvas() {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+        }
+
+        function drawVisuals(p1x, p1y, p2x, p2y, chebyshevDist) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          const padding = 40;
+          const usableWidth = width - 2 * padding;
+          const usableHeight = height - 2 * padding;
+
+          const allX = [p1x, p2x, p1x - chebyshevDist, p1x + chebyshevDist];
+          const allY = [p1y, p2y, p1y - chebyshevDist, p1y + chebyshevDist];
+
+          let minDataX = Math.min(...allX);
+          let maxDataX = Math.max(...allX);
+          let minDataY = Math.min(...allY);
+          let maxDataY = Math.max(...allY);
+
+          let dataWidth = maxDataX - minDataX;
+          let dataHeight = maxDataY - minDataY;
+
+          if (dataWidth === 0)
+            dataWidth = chebyshevDist > 0 ? 2 * chebyshevDist : 10;
+          if (dataHeight === 0)
+            dataHeight = chebyshevDist > 0 ? 2 * chebyshevDist : 10;
+
+          if (dataWidth < 1) {
+            minDataX -= (1 - dataWidth) / 2;
+            maxDataX += (1 - dataWidth) / 2;
+            dataWidth = 1;
+          }
+          if (dataHeight < 1) {
+            minDataY -= (1 - dataHeight) / 2;
+            maxDataY += (1 - dataHeight) / 2;
+            dataHeight = 1;
+          }
+
+          const scaleX = usableWidth / dataWidth;
+          const scaleY = usableHeight / dataHeight;
+          const scale = Math.min(scaleX, scaleY) * 0.9;
+
+          const toCanvasX = (dataX) =>
+            padding +
+            (dataX - minDataX) * scale +
+            (usableWidth - dataWidth * scale) / 2;
+          const toCanvasY = (dataY) =>
+            padding +
+            (usableHeight - (dataY - minDataY) * scale) -
+            (usableHeight - dataHeight * scale) / 2;
+
+          ctx.strokeStyle = "rgba(13, 148, 136, 0.5)";
+          ctx.lineWidth = 2;
+          const squareSide = 2 * chebyshevDist * scale;
+          const squareX = toCanvasX(p1x - chebyshevDist);
+          const squareY = toCanvasY(p1y + chebyshevDist);
+
+          ctx.beginPath();
+          ctx.rect(squareX, squareY, squareSide, squareSide);
+          ctx.stroke();
+
+          ctx.fillStyle = "#0d9488";
+          ctx.beginPath();
+          ctx.arc(toCanvasX(p1x), toCanvasY(p1y), 5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillText(
+            "P (" + p1x + "," + p1y + ")",
+            toCanvasX(p1x) + 8,
+            toCanvasY(p1y) - 8
+          );
+
+          ctx.fillStyle = "#db2777";
+          ctx.beginPath();
+          ctx.arc(toCanvasX(p2x), toCanvasY(p2y), 5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillText(
+            "Q (" + p2x + "," + p2y + ")",
+            toCanvasX(p2x) + 8,
+            toCanvasY(p2y) - 8
+          );
+
+          ctx.strokeStyle = "rgba(200, 200, 200, 0.8)";
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+
+          ctx.beginPath();
+          ctx.moveTo(toCanvasX(p1x), toCanvasY(p1y));
+          ctx.lineTo(toCanvasX(p2x), toCanvasY(p1y));
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(toCanvasX(p2x), toCanvasY(p1y));
+          ctx.lineTo(toCanvasX(p2x), toCanvasY(p2y));
+          ctx.stroke();
+
+          ctx.setLineDash([]);
+
+          const originXCanvas = toCanvasX(0);
+          const originYCanvas = toCanvasY(0);
+
+          ctx.strokeStyle = "#a1a1aa";
+          ctx.lineWidth = 1;
+
+          if (originYCanvas >= padding && originYCanvas <= height - padding) {
+            ctx.beginPath();
+            ctx.moveTo(padding / 2, originYCanvas);
+            ctx.lineTo(width - padding / 2, originYCanvas);
+            ctx.stroke();
+          }
+
+          if (originXCanvas >= padding && originXCanvas <= width - padding) {
+            ctx.beginPath();
+            ctx.moveTo(originXCanvas, padding / 2);
+            ctx.lineTo(originXCanvas, height - padding / 2);
+            ctx.stroke();
+          }
+        }
+
+        function sizeCanvasAndDraw() {
+          const container = canvas.parentElement;
+          if (!container) return;
+
+          const newWidth = container.clientWidth;
+          const newHeight = container.clientHeight;
+
+          if (canvas.width !== newWidth || canvas.height !== newHeight) {
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+          }
+          calculateAndDraw();
+        }
+
+        const inputs = [p1xInput, p1yInput, p2xInput, p2yInput];
+        inputs.forEach((input) =>
+          input.addEventListener("input", calculateAndDraw)
+        );
+
+        window.addEventListener("resize", sizeCanvasAndDraw);
+
+        if (
+          document.getElementById("visualizador").classList.contains("active")
+        ) {
+          requestAnimationFrame(() => sizeCanvasAndDraw());
+        } else {
+          const p1x = parseFloat(p1xInput.value);
+          const p1y = parseFloat(p1yInput.value);
+          const p2x = parseFloat(p2xInput.value);
+          const p2y = parseFloat(p2yInput.value);
+          if (!isNaN(p1x) && !isNaN(p1y) && !isNaN(p2x) && !isNaN(p2y)) {
+            const deltaX = Math.abs(p2x - p1x);
+            const deltaY = Math.abs(p2y - p1y);
+            const distance = Math.max(deltaX, deltaY);
+            distanceResultEl.textContent = distance.toFixed(4);
+            deltaXEl.textContent = deltaX.toFixed(4);
+            deltaYEl.textContent = deltaY.toFixed(4);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

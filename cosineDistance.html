@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância Cosseno Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices: 
+        - Definição: Text block (HTML/Tailwind) to inform.
+        - Fórmula e Termos: Formatted text for formulas, list for term explanations (HTML/Tailwind) to inform accurately.
+        - Aplicações Práticas: List with Unicode icons (HTML/Tailwind) for a quick overview.
+        - Visualizador Interativo: HTML Canvas for custom 2D vector drawing, JS for input handling, calculations (dot product, magnitude, cosine similarity, cosine distance, angle), and dynamic canvas updates. This provides direct, hands-on exploration of the concept. No Chart.js used for this specific visualizer as direct canvas manipulation offers better control for vector/angle drawing. Chart.js is included as per requirements for "standard dynamic charts" if they were needed, but not used here.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif; /* Fallback to sans-serif if Inter is not available */
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #f97316; /* orange-500 */
+        color: #f97316;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      /* Ensure canvas is responsive and respects container */
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px; /* Max width for the canvas visualization */
+        height: 300px; /* Base height */
+        margin-left: auto;
+        margin-right: auto;
+      }
+      #vectorCanvas {
+        display: block; /* Ensures canvas behaves like a block element */
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 350px;
+        }
+      }
+      @media (min-width: 768px) {
+        /* md breakpoint */
+        .canvas-container {
+          height: 400px;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-orange-600">
+          📐 Distância Cosseno Interativa 📐
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-orange-400 hover:text-orange-500 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-orange-400 hover:text-orange-500 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula e Termos
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-orange-400 hover:text-orange-500 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-orange-400 hover:text-orange-500 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-orange-600 mb-4">
+            O que é a Distância Cosseno?
+          </h2>
+          <p class="mb-3 leading-relaxed">
+            A <strong>Distância Cosseno</strong> é uma métrica fundamental que
+            quantifica a <strong>semelhança</strong> entre dois vetores. O
+            interessante é que ela faz isso analisando o
+            <em>cosseno do ângulo</em> formado entre eles, desconsiderando suas
+            magnitudes (ou "tamanhos").
+          </p>
+          <p class="leading-relaxed">
+            Imagine dois vetores apontando em direções. A Distância Cosseno nos
+            diz o quão "alinhados" eles estão. Quanto menor a distância cosseno,
+            mais similares são as direções dos vetores.
+          </p>
+          <p class="mt-4 leading-relaxed">
+            Esta seção introdutória define o conceito chave. A Distância Cosseno
+            é uma medida de dissimilaridade entre dois vetores não-nulos de um
+            espaço produto interno. Ela é derivada da Similaridade Cosseno, que
+            mede o cosseno do ângulo entre dois vetores.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-orange-600 mb-4">
+            💡 Fórmula da Distância Cosseno e Seus Termos
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            Nesta seção, detalhamos a matemática por trás da Distância Cosseno.
+            Compreender a fórmula e cada um dos seus componentes é crucial para
+            entender como a similaridade entre vetores é quantificada. As
+            explicações visam desmistificar os conceitos de produto escalar,
+            norma Euclidiana e o intervalo de valores da distância.
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Fórmula Principal
+            </h3>
+            <p class="mb-2">
+              A Distância Cosseno entre dois vetores `x` e `y` é calculada da
+              seguinte forma:
+            </p>
+            <div
+              class="bg-slate-100 p-3 rounded text-sm font-mono text-slate-800 break-words"
+            >
+              d<sub>cos</sub>(x, y) = 1 - Similaridade<sub>Cosseno</sub>(x, y)
+            </div>
+            <p class="mt-3 mb-2">
+              Onde a <strong>Similaridade Cosseno</strong> é:
+            </p>
+            <div
+              class="bg-slate-100 p-3 rounded text-sm font-mono text-slate-800 break-words"
+            >
+              Similaridade<sub>Cosseno</sub>(x, y) = (x · y) / (‖x‖ × ‖y‖)
+            </div>
+            <p class="mt-3 mb-2">
+              Portanto, a fórmula completa da Distância Cosseno é:
+            </p>
+            <div
+              class="bg-slate-100 p-3 rounded text-sm font-mono text-slate-800 break-words"
+            >
+              d<sub>cos</sub>(x, y) = 1 - [(x · y) / (‖x‖ × ‖y‖)]
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium text-slate-700 mb-3">
+              📝 Desvendando os Termos da Fórmula
+            </h3>
+            <ul class="list-disc list-inside space-y-3 pl-2 leading-relaxed">
+              <li>
+                <strong>x, y:</strong> São os vetores que estamos comparando.
+                Eles devem ser não-nulos (ou seja, não podem ser vetores
+                zerados) e pertencer a um espaço ℝⁿ (um espaço de `n`
+                dimensões).
+              </li>
+              <li>
+                <strong>x · y:</strong> Representa o
+                <strong>produto escalar</strong> (ou produto interno) entre os
+                vetores `x` e `y`. Ele mede o quanto um vetor se projeta na
+                direção do outro. <br /><span
+                  class="text-xs text-slate-500 ml-4"
+                  ><em>Exemplo (2D):</em> Se `x = [a, b]` e `y = [c, d]`, então
+                  `x · y = ac + bd`.</span
+                >
+              </li>
+              <li>
+                <strong>‖x‖ e ‖y‖:</strong> São as
+                <strong>normas Euclidianas</strong> (ou magnitudes/comprimentos)
+                dos vetores `x` e `y`, respectivamente. <br /><span
+                  class="text-xs text-slate-500 ml-4"
+                  >A norma Euclidiana de um vetor `x = (x₁, x₂, ..., xₙ)` é
+                  calculada como `√(x₁² + x₂² + ... + xₙ²)`.</span
+                >
+              </li>
+              <li>
+                <strong>Intervalo da Distância Cosseno:</strong> Os valores
+                variam de 0 a 2.
+                <ul class="list-circle list-inside ml-6 mt-1 space-y-1 text-sm">
+                  <li>
+                    <strong>0:</strong> Significa que os vetores têm a
+                    <strong>mesma direção</strong> (ângulo de 0°). Máxima
+                    similaridade.
+                  </li>
+                  <li>
+                    <strong>1:</strong> Significa que os vetores são
+                    <strong>ortogonais</strong> (ângulo de 90°). Ausência de
+                    similaridade (na perspectiva do cosseno).
+                  </li>
+                  <li>
+                    <strong>2:</strong> Significa que os vetores têm
+                    <strong>direções opostas</strong> (ângulo de 180°). Máxima
+                    dissimilaridade.
+                  </li>
+                </ul>
+              </li>
+            </ul>
+            <p
+              class="mt-4 p-3 bg-amber-50 border-l-4 border-amber-400 text-amber-700 rounded text-sm leading-relaxed"
+            >
+              <strong>Ponto Chave:</strong> A Similaridade Cosseno varia de -1
+              (vetores opostos) a 1 (mesma direção). Ao subtrair este valor de 1
+              (`1 - Similaridade_Cosseno`), transformamos essa escala para a
+              Distância Cosseno, que varia de 0 (máxima similaridade) a 2
+              (máxima dissimilaridade).
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-orange-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A Distância Cosseno não é apenas um conceito teórico; ela tem
+            aplicações vastas e impactantes em diversas áreas da tecnologia e
+            ciência de dados. Esta seção destaca alguns dos usos mais comuns,
+            ilustrando como essa métrica ajuda a resolver problemas do mundo
+            real, desde encontrar informações relevantes até recomendar
+            produtos.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🔍 Recuperação de Informação e Buscadores
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Essencial para comparar a similaridade entre um termo de busca e
+                os documentos em um banco de dados. Quanto menor a distância
+                cosseno, mais relevante é o documento para a consulta.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                ✍️ Classificação e Agrupamento de Texto (PLN)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Usada para agrupar artigos, notícias ou qualquer tipo de texto
+                com base na semelhança de seu conteúdo semântico, ajudando a
+                identificar tópicos e temas em grandes volumes de dados
+                textuais.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🛍️ Sistemas de Recomendação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para sugerir produtos, filmes ou músicas, comparando o perfil do
+                usuário com os perfis de itens (ou outros usuários) usando
+                vetores de características. A Distância Cosseno ajuda a
+                encontrar os itens "mais próximos".
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🧬 Bioinformática
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Aplicada na comparação de sequências genéticas, perfis de
+                expressão gênica e outras representações vetoriais de dados
+                biológicos para encontrar padrões e relações.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Análise de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Utilizada para comparar vetores de características extraídos de
+                imagens, permitindo encontrar imagens visualmente semelhantes em
+                grandes coleções.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-orange-600 mb-4">
+            🔬 Visualizador Interativo da Distância Cosseno
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Nesta seção, você pode explorar visualmente como a Distância Cosseno
+            funciona. Insira as componentes de dois vetores bidimensionais
+            (Vetor A e Vetor B) nos campos abaixo. O gráfico mostrará os vetores
+            em um plano, o ângulo entre eles, e os cálculos da Similaridade
+            Cosseno e da Distância Cosseno serão atualizados dinamicamente. Isso
+            permite observar como a alteração das direções dos vetores impacta
+            sua semelhança. Experimente com diferentes valores, incluindo
+            vetores na mesma direção, opostos ou ortogonais!
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-6">
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Vetor A (x₁, y₁)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="vecAx"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="x₁"
+                  />
+                  <input
+                    type="number"
+                    id="vecAy"
+                    value="4"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="y₁"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">
+                  Vetor B (x₂, y₂)
+                </h3>
+                <div class="flex gap-3">
+                  <input
+                    type="number"
+                    id="vecBx"
+                    value="4"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="x₂"
+                  />
+                  <input
+                    type="number"
+                    id="vecBy"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="y₂"
+                  />
+                </div>
+              </div>
+              <div class="mt-6 space-y-3 text-sm">
+                <p>
+                  <strong>Produto Escalar (A · B):</strong>
+                  <span id="dotProduct" class="font-semibold text-orange-600"
+                    >N/A</span
+                  >
+                </p>
+                <p>
+                  <strong>Magnitude ||A||:</strong>
+                  <span id="magA" class="font-semibold text-orange-600"
+                    >N/A</span
+                  >
+                </p>
+                <p>
+                  <strong>Magnitude ||B||:</strong>
+                  <span id="magB" class="font-semibold text-orange-600"
+                    >N/A</span
+                  >
+                </p>
+                <p>
+                  <strong>Ângulo (θ):</strong>
+                  <span id="angle" class="font-semibold text-orange-600"
+                    >N/A</span
+                  >
+                </p>
+                <p>
+                  <strong>Similaridade Cosseno:</strong>
+                  <span
+                    id="cosineSimilarity"
+                    class="font-semibold text-orange-600"
+                    >N/A</span
+                  >
+                </p>
+                <p>
+                  <strong>Distância Cosseno:</strong>
+                  <span
+                    id="cosineDistance"
+                    class="font-semibold text-green-600 text-lg"
+                    >N/A</span
+                  >
+                </p>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div
+                class="canvas-container bg-slate-50 rounded-lg border border-slate-200 shadow-inner"
+              >
+                <canvas id="vectorCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear"></span> Aplicação Interativa da
+          Distância Cosseno. Desenvolvido para fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+          });
+        });
+
+        document.getElementById("currentYear").textContent =
+          new Date().getFullYear();
+
+        const vecAxInput = document.getElementById("vecAx");
+        const vecAyInput = document.getElementById("vecAy");
+        const vecBxInput = document.getElementById("vecBx");
+        const vecByInput = document.getElementById("vecBy");
+
+        const dotProductEl = document.getElementById("dotProduct");
+        const magAEl = document.getElementById("magA");
+        const magBEl = document.getElementById("magB");
+        const angleEl = document.getElementById("angle");
+        const cosineSimilarityEl = document.getElementById("cosineSimilarity");
+        const cosineDistanceEl = document.getElementById("cosineDistance");
+
+        const canvas = document.getElementById("vectorCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateAndDraw() {
+          const ax = parseFloat(vecAxInput.value) || 0;
+          const ay = parseFloat(vecAyInput.value) || 0;
+          const bx = parseFloat(vecBxInput.value) || 0;
+          const by = parseFloat(vecByInput.value) || 0;
+
+          const dotProduct = ax * bx + ay * by;
+          const magA = Math.sqrt(ax * ax + ay * ay);
+          const magB = Math.sqrt(bx * bx + by * by);
+
+          let cosineSimilarity = 0;
+          if (magA !== 0 && magB !== 0) {
+            cosineSimilarity = dotProduct / (magA * magB);
+          }
+
+          cosineSimilarity = Math.max(-1, Math.min(1, cosineSimilarity));
+
+          const cosineDistance = 1 - cosineSimilarity;
+          let angleRad = Math.acos(cosineSimilarity);
+          let angleDeg = angleRad * (180 / Math.PI);
+
+          if (isNaN(angleDeg))
+            angleDeg =
+              magA === 0 || magB === 0
+                ? 0
+                : dotProduct === 0
+                ? 90
+                : cosineSimilarity >= 0.99999
+                ? 0
+                : 180;
+
+          dotProductEl.textContent = dotProduct.toFixed(4);
+          magAEl.textContent = magA.toFixed(4);
+          magBEl.textContent = magB.toFixed(4);
+          angleEl.textContent = `${angleDeg.toFixed(2)}°`;
+          cosineSimilarityEl.textContent = cosineSimilarity.toFixed(4);
+          cosineDistanceEl.textContent = cosineDistance.toFixed(4);
+
+          drawVectors(ax, ay, bx, by, angleRad);
+        }
+
+        function drawVectors(ax, ay, bx, by, angleRad) {
+          const width = canvas.width;
+          const height = canvas.height;
+          const originX = width / 2;
+          const originY = height / 2;
+
+          const maxCoord = Math.max(
+            Math.abs(ax),
+            Math.abs(ay),
+            Math.abs(bx),
+            Math.abs(by),
+            1
+          );
+          const scale = Math.min(
+            width / (2.2 * maxCoord),
+            height / (2.2 * maxCoord)
+          );
+
+          ctx.clearRect(0, 0, width, height);
+
+          ctx.beginPath();
+          ctx.moveTo(0, originY);
+          ctx.lineTo(width, originY);
+          ctx.moveTo(originX, 0);
+          ctx.lineTo(originX, height);
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          const gridSize = 20 * (scale / 20);
+          ctx.strokeStyle = "#e2e8f0";
+          for (let x = originX + gridSize; x < width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+          }
+          for (let x = originX - gridSize; x > 0; x -= gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+          }
+          for (let y = originY + gridSize; y < height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+          }
+          for (let y = originY - gridSize; y > 0; y -= gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(originX, originY);
+          ctx.lineTo(originX + ax * scale, originY - ay * scale);
+          ctx.strokeStyle = "#2563eb";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          drawArrowhead(
+            ctx,
+            originX,
+            originY,
+            originX + ax * scale,
+            originY - ay * scale,
+            "#2563eb"
+          );
+          ctx.fillStyle = "#2563eb";
+          ctx.fillText(
+            "A",
+            originX + ax * scale + (ax >= 0 ? 5 : -15),
+            originY - ay * scale + (ay >= 0 ? 10 : -5)
+          );
+
+          ctx.beginPath();
+          ctx.moveTo(originX, originY);
+          ctx.lineTo(originX + bx * scale, originY - by * scale);
+          ctx.strokeStyle = "#dc2626";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          drawArrowhead(
+            ctx,
+            originX,
+            originY,
+            originX + bx * scale,
+            originY - by * scale,
+            "#dc2626"
+          );
+          ctx.fillStyle = "#dc2626";
+          ctx.fillText(
+            "B",
+            originX + bx * scale + (bx >= 0 ? 5 : -15),
+            originY - by * scale + (by >= 0 ? 10 : -5)
+          );
+
+          if (
+            (ax !== 0 || ay !== 0) &&
+            (bx !== 0 || by !== 0) &&
+            angleRad > 0.001
+          ) {
+            const arcRadius =
+              Math.min(magAEl.textContent, magBEl.textContent) > 0
+                ? Math.min(
+                    0.2 * scale * Math.abs(parseFloat(magAEl.textContent)),
+                    0.2 * scale * Math.abs(parseFloat(magBEl.textContent)),
+                    30
+                  )
+                : 30;
+
+            const startAngleA = Math.atan2(-ay, ax);
+            const startAngleB = Math.atan2(-by, bx);
+
+            ctx.beginPath();
+
+            const crossProductZ = ax * by - ay * bx;
+
+            if (crossProductZ > 0) {
+              ctx.arc(
+                originX,
+                originY,
+                arcRadius,
+                startAngleA,
+                startAngleB,
+                false
+              );
+            } else {
+              ctx.arc(
+                originX,
+                originY,
+                arcRadius,
+                startAngleB,
+                startAngleA,
+                false
+              );
+            }
+
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = "#334155";
+          ctx.fillText("(0,0)", originX - 20, originY + 15);
+        }
+
+        function drawArrowhead(ctx, fromX, fromY, toX, toY, color) {
+          const headlen = 10;
+          const dx = toX - fromX;
+          const dy = toY - fromY;
+          const angle = Math.atan2(dy, dx);
+          ctx.beginPath();
+          ctx.moveTo(toX, toY);
+          ctx.lineTo(
+            toX - headlen * Math.cos(angle - Math.PI / 6),
+            toY - headlen * Math.sin(angle - Math.PI / 6)
+          );
+          ctx.moveTo(toX, toY);
+          ctx.lineTo(
+            toX - headlen * Math.cos(angle + Math.PI / 6),
+            toY - headlen * Math.sin(angle + Math.PI / 6)
+          );
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
+        [vecAxInput, vecAyInput, vecBxInput, vecByInput].forEach((input) => {
+          input.addEventListener("input", calculateAndDraw);
+        });
+
+        calculateAndDraw();
+
+        new ResizeObserver(() => {
+          const style = getComputedStyle(canvas);
+          canvas.width = parseInt(style.width);
+          canvas.height = parseInt(style.height);
+          calculateAndDraw();
+        }).observe(canvas.parentElement);
+      });
+    </script>
+  </body>
+</html>
