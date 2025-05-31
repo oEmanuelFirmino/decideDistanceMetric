@@ -9,3 +9,4 @@ hellingerDistance.html
 jaccardDistance.html
 mahalanobisDistance.html
 manhattanDistance.html
+minkowskiDistance.html

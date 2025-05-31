@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distância de Minkowski Interativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 
+        Visualization & Content Choices:
+        - Definição, Fórmula, Casos Especiais, Parâmetro 'p', Aplicações: Text blocks, lists (HTML/Tailwind).
+        - Visualizador Interativo (2D): HTML inputs for coordinates of two points and parameter 'p'. JS for calculation and dynamic canvas drawing. Visualization will show points and the iso-distance contour (Minkowski "circle") based on 'p'.
+    -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      .tab-button {
+        transition: all 0.3s ease;
+      }
+      .tab-button.active {
+        border-color: #0d9488; /* teal-600 */
+        color: #0d9488;
+        font-weight: 600;
+      }
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+      .formula {
+        font-family: "Consolas", "Courier New", Courier, monospace;
+        background-color: #f1f5f9; /* slate-100 */
+        padding: 0.75rem; /* p-3 */
+        border-radius: 0.25rem; /* rounded */
+        font-size: 0.875rem; /* text-sm */
+        color: #1e293b; /* slate-800 */
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .error-message {
+        color: #dc2626; /* red-600 */
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        height: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #f8fafc; /* slate-50 */
+        border-radius: 0.5rem; /* rounded-lg */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+      }
+      #minkowskiCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      @media (min-width: 640px) {
+        /* sm breakpoint */
+        .canvas-container {
+          height: 450px;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-700 antialiased">
+    <div class="bg-teal-600 text-white shadow-md">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a
+              href="index.html"
+              class="text-xl font-bold hover:text-teal-200 transition-colors"
+              >Página Inicial</a
+            >
+          </div>
+          <div class="relative">
+            <button
+              id="metrics-menu-button"
+              class="px-3 py-2 rounded-md text-sm font-medium hover:bg-teal-700 focus:outline-none focus:bg-teal-700 transition-colors"
+            >
+              Métricas de Distância <span class="ml-1">&#9662;</span>
+            </button>
+            <div
+              id="metrics-dropdown"
+              class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none py-1 z-50"
+            >
+              <a
+                href="chebyshevDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Chebyshev</a
+              >
+              <a
+                href="correlationDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Correlação</a
+              >
+              <a
+                href="cosineDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. Cosseno</a
+              >
+              <a
+                href="diceDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. Dice</a
+              >
+              <a
+                href="euclidianDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. Euclidiana</a
+              >
+              <a
+                href="hammingDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Hamming</a
+              >
+              <a
+                href="hellingerDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Hellinger</a
+              >
+              <a
+                href="jaccardDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Jaccard</a
+              >
+              <a
+                href="mahalanobisDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Mahalanobis</a
+              >
+              <a
+                href="manhattanDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Manhattan</a
+              >
+              <a
+                href="minkowskiDistance.html"
+                class="block px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-600 transition-colors"
+                >Dist. de Minkowski</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-blue-600">
+          📏 Distância de Minkowski Interativa 📏
+        </h1>
+      </header>
+
+      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+        <button
+          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="definicao"
+        >
+          Definição
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="formula"
+        >
+          Fórmula
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="casos_especiais"
+        >
+          Casos Especiais
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="parametro_p"
+        >
+          Parâmetro 'p'
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="aplicacoes"
+        >
+          Aplicações Práticas
+        </button>
+        <button
+          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
+          data-tab="visualizador"
+        >
+          Visualizador Interativo
+        </button>
+      </nav>
+
+      <main>
+        <section
+          id="definicao"
+          class="content-section active bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            O que é a Distância de Minkowski?
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A <strong>Distância de Minkowski</strong> é uma métrica de distância
+            em um espaço vetorial normado que pode ser considerada como uma
+            generalização de outras métricas de distância mais conhecidas, como
+            a Distância Euclidiana e a Distância de Manhattan. Ela é nomeada em
+            homenagem ao matemático alemão Hermann Minkowski.
+          </p>
+          <p class="mb-3 leading-relaxed">
+            A chave para a Distância de Minkowski é um parâmetro
+            <strong>p</strong> (também chamado de ordem ou norma L<sub>p</sub>),
+            que pode ser qualquer número real maior ou igual a 1. Ao variar o
+            valor de 'p', a Distância de Minkowski se transforma em diferentes
+            tipos de métricas de distância.
+          </p>
+          <p class="leading-relaxed">
+            Ela mede a "distância" entre dois pontos em um espaço n-dimensional.
+            Para que seja uma métrica válida (satisfazendo propriedades como
+            não-negatividade, identidade dos indiscerníveis, simetria e
+            desigualdade triangular), o parâmetro 'p' deve ser maior ou igual a
+            1.
+          </p>
+        </section>
+
+        <section
+          id="formula"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            💡 Fórmula da Distância de Minkowski
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A fórmula geral para a Distância de Minkowski entre dois pontos (ou
+            vetores) <em>X</em> e <em>Y</em> em um espaço n-dimensional é
+            definida da seguinte forma:
+          </p>
+
+          <div class="mb-6">
+            <p class="mb-2">
+              Sejam os pontos <em>X</em> = (x<sub>1</sub>, x<sub>2</sub>, ...,
+              x<sub>n</sub>) e <em>Y</em> = (y<sub>1</sub>, y<sub>2</sub>, ...,
+              y<sub>n</sub>).
+            </p>
+            <p class="mb-2">
+              A Distância de Minkowski, D<sub>Minkowski</sub>(X, Y), com
+              parâmetro <em>p</em> ≥ 1, é:
+            </p>
+            <div class="formula">
+              D<sub>Minkowski</sub>(X, Y) = ( Σ<sub>i=1</sub><sup>n</sup> |x<sub
+                >i</sub
+              >
+              - y<sub>i</sub>|<sup>p</sup> )<sup>1/p</sup>
+            </div>
+            <p class="mt-2 leading-relaxed">Onde:</p>
+            <ul class="list-disc list-inside space-y-1 pl-2 mt-2">
+              <li>
+                Σ representa a soma sobre todas as dimensões <em>i</em> (de 1 a
+                <em>n</em>).
+              </li>
+              <li>
+                |x<sub>i</sub> - y<sub>i</sub>| é o valor absoluto da diferença
+                entre as coordenadas dos pontos X e Y na i-ésima dimensão.
+              </li>
+              <li><em>p</em> é o parâmetro da distância (ordem da norma).</li>
+            </ul>
+          </div>
+          <div class="mb-6">
+            <h3 class="text-xl font-medium text-slate-700 mb-2">
+              Caso Bidimensional (2D)
+            </h3>
+            <p class="mb-2">
+              Para dois pontos P = (x<sub>1</sub>, y<sub>1</sub>) e Q =
+              (x<sub>2</sub>, y<sub>2</sub>) no plano:
+            </p>
+            <div class="formula">
+              D<sub>Minkowski</sub>(P, Q) = ( |x<sub>1</sub> -
+              x<sub>2</sub>|<sup>p</sup> + |y<sub>1</sub> - y<sub>2</sub>|<sup
+                >p</sup
+              >
+              )<sup>1/p</sup>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="casos_especiais"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            ✨ Casos Especiais da Distância de Minkowski
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            A beleza da Distância de Minkowski reside em sua capacidade de
+            generalizar outras métricas de distância conhecidas, ajustando o
+            parâmetro 'p':
+          </p>
+          <ul class="space-y-4">
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700 text-lg mb-1">
+                p = 1: Distância de Manhattan (L<sub>1</sub>)
+              </h3>
+              <p class="text-sm leading-relaxed mb-2">
+                Quando p = 1, a fórmula se simplifica para a soma das diferenças
+                absolutas entre as coordenadas:
+              </p>
+              <div class="formula text-xs">
+                D(X, Y) = Σ<sub>i=1</sub><sup>n</sup> |x<sub>i</sub> -
+                y<sub>i</sub>|
+              </div>
+              <p class="text-sm leading-relaxed mt-2">
+                Também conhecida como "distância do quarteirão" ou "distância
+                L<sub>1</sub>". Representa a distância que se percorreria entre
+                dois pontos se só fosse possível mover-se ao longo dos eixos
+                (como em uma grade de ruas de uma cidade).
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700 text-lg mb-1">
+                p = 2: Distância Euclidiana (L<sub>2</sub>)
+              </h3>
+              <p class="text-sm leading-relaxed mb-2">
+                Quando p = 2, obtemos a familiar Distância Euclidiana:
+              </p>
+              <div class="formula text-xs">
+                D(X, Y) = ( Σ<sub>i=1</sub><sup>n</sup> (x<sub>i</sub> -
+                y<sub>i</sub>)<sup>2</sup> )<sup>1/2</sup>
+              </div>
+              <p class="text-sm leading-relaxed mt-2">
+                Esta é a distância "em linha reta" entre dois pontos, a mais
+                intuitiva no nosso cotidiano. É a norma L<sub>2</sub>.
+              </p>
+            </li>
+            <li class="p-4 bg-slate-50 rounded-md shadow-sm">
+              <h3 class="font-semibold text-slate-700 text-lg mb-1">
+                p → ∞: Distância de Chebyshev (L<sub>∞</sub>)
+              </h3>
+              <p class="text-sm leading-relaxed mb-2">
+                Quando p tende ao infinito (p → ∞), a Distância de Minkowski
+                converge para a Distância de Chebyshev:
+              </p>
+              <div class="formula text-xs">
+                D(X, Y) = max<sub>i</sub> ( |x<sub>i</sub> - y<sub>i</sub>| )
+              </div>
+              <p class="text-sm leading-relaxed mt-2">
+                Também conhecida como "distância máxima" ou "métrica do
+                tabuleiro de xadrez". É a maior diferença absoluta entre as
+                coordenadas em qualquer dimensão.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          id="parametro_p"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🅿️ O Papel do Parâmetro 'p'
+          </h2>
+          <p class="mb-4 leading-relaxed">
+            O parâmetro 'p' na Distância de Minkowski é crucial, pois ele dita
+            como as diferenças em cada dimensão contribuem para a distância
+            total.
+          </p>
+          <ul class="list-disc list-inside space-y-3 pl-2 leading-relaxed">
+            <li>
+              <strong>p = 1 (Manhattan):</strong> Todas as diferenças
+              dimensionais são somadas linearmente. Não há ênfase extra para
+              grandes desvios em uma única dimensão.
+            </li>
+            <li>
+              <strong>p = 2 (Euclidiana):</strong> As diferenças são elevadas ao
+              quadrado antes de serem somadas. Isso significa que desvios
+              maiores em uma dimensão têm um impacto proporcionalmente maior na
+              distância total do que desvios menores.
+            </li>
+            <li>
+              <strong>1 < p < 2:</strong> Intermediário entre Manhattan e
+              Euclidiana. Dá mais peso a grandes desvios do que Manhattan, mas
+              menos do que Euclidiana.
+            </li>
+            <li>
+              <strong>p > 2:</strong> Dá ainda mais ênfase a grandes desvios. À
+              medida que 'p' aumenta, a dimensão com a maior diferença absoluta
+              começa a dominar cada vez mais o cálculo da distância.
+            </li>
+            <li>
+              <strong>p → ∞ (Chebyshev):</strong> No limite, apenas a maior
+              diferença absoluta entre qualquer par de coordenadas determina a
+              distância. Todas as outras diferenças, por menores que sejam, são
+              ignoradas.
+            </li>
+            <li>
+              <strong>Condição de Métrica:</strong> Para que a Distância de
+              Minkowski seja uma métrica verdadeira (satisfazendo a desigualdade
+              triangular), é necessário que <code>p ≥ 1</code>. Se
+              <code>0 < p < 1</code>, a função ainda pode ser calculada, mas não
+              é uma métrica (é uma quasi-norma L<sub>p</sub>).
+            </li>
+          </ul>
+          <p
+            class="mt-4 p-3 bg-sky-50 border-l-4 border-sky-400 text-sky-700 rounded text-sm leading-relaxed"
+          >
+            Visualmente, o parâmetro 'p' altera a forma do "círculo unitário" (o
+            conjunto de todos os pontos a uma distância de 1 da origem). Para
+            p=1 é um losango (quadrado rotacionado), para p=2 é um círculo
+            perfeito, e à medida que p aumenta, a forma se aproxima de um
+            quadrado alinhado com os eixos (Chebyshev).
+          </p>
+        </section>
+
+        <section
+          id="aplicacoes"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🎯 Principais Aplicações Práticas
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            A flexibilidade da Distância de Minkowski a torna útil em diversas
+            áreas, especialmente em aprendizado de máquina e mineração de dados:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🤖 Aprendizado de Máquina (Machine Learning)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Em algoritmos como k-Nearest Neighbors (k-NN), onde a escolha da
+                métrica de distância (e do parâmetro 'p') pode impactar
+                significativamente o desempenho da classificação ou regressão.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📊 Análise de Agrupamento (Clustering)
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Algoritmos de clustering que dependem de distâncias entre pontos
+                podem usar a Distância de Minkowski para ajustar a noção de
+                "proximidade" de acordo com as características dos dados.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🔍 Sistemas de Recomendação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para medir a similaridade entre usuários ou itens com base em
+                seus vetores de características, onde diferentes 'p' podem
+                capturar nuances distintas.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🖼️ Visão Computacional e Processamento de Imagens
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Na comparação de vetores de características de imagens
+                (descritores) ou para medir dissimilaridade entre patches de
+                imagens.
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                📚 Recuperação de Informação
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Para classificar documentos ou encontrar documentos similares
+                com base em suas representações vetoriais (ex: TF-IDF).
+              </p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">
+                🌍 Modelagem Geoespacial
+              </h3>
+              <p class="text-sm leading-relaxed">
+                Onde diferentes valores de 'p' podem ser mais apropriados
+                dependendo da natureza do terreno ou das restrições de movimento
+                (Manhattan para grades urbanas, Euclidiana para voo livre).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="visualizador"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
+        >
+          <h2 class="text-2xl font-semibold text-teal-600 mb-4">
+            🔬 Visualizador Interativo da Distância de Minkowski (2D)
+          </h2>
+          <p class="mb-6 leading-relaxed">
+            Explore a Distância de Minkowski em 2D! Defina as coordenadas de
+            dois pontos (P e Q) e o valor do parâmetro 'p' (ordem). O gráfico
+            mostrará os pontos e o "círculo de Minkowski" (contorno de
+            isodistância) centrado em P, passando por Q. Observe como a forma do
+            contorno muda com 'p'.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 space-y-4">
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Ponto P (x<sub>1</sub>, y<sub>1</sub>)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="p1x_mink"
+                    value="0"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P1x"
+                  />
+                  <input
+                    type="number"
+                    id="p1y_mink"
+                    value="0"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P1y"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Ponto Q (x<sub>2</sub>, y<sub>2</sub>)
+                </h3>
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="p2x_mink"
+                    value="3"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P2x"
+                  />
+                  <input
+                    type="number"
+                    id="p2y_mink"
+                    value="2"
+                    class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="P2y"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-medium text-slate-700 mb-1">
+                  Parâmetro 'p' (Ordem)
+                </h3>
+                <input
+                  type="number"
+                  id="p_param_mink"
+                  value="2"
+                  min="1"
+                  step="0.1"
+                  class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="p ≥ 1"
+                />
+                <p class="text-xs text-slate-500 mt-1">
+                  Use valores grandes (ex: 100) para aproximar Chebyshev
+                  (L<sub>∞</sub>).
+                </p>
+              </div>
+              <div class="mt-4 space-y-2">
+                <p class="text-md">
+                  <strong>Dist. Minkowski (D<sub>p</sub>):</strong>
+                </p>
+                <p
+                  id="minkowskiDistanceResult"
+                  class="font-bold text-teal-600 text-xl"
+                >
+                  N/A
+                </p>
+                <p id="minkowskiError" class="error-message"></p>
+                <details class="text-xs text-slate-500">
+                  <summary>Detalhes do Cálculo (para p < 100)</summary>
+                  <p class="mt-1">
+                    |x<sub>1</sub>-x<sub>2</sub>|<sup>p</sup> =
+                    <span id="termX_mink">N/A</span>
+                  </p>
+                  <p>
+                    |y<sub>1</sub>-y<sub>2</sub>|<sup>p</sup> =
+                    <span id="termY_mink">N/A</span>
+                  </p>
+                  <p>Soma = <span id="sum_terms_mink">N/A</span></p>
+                  <p>
+                    (Soma)<sup>1/p</sup> = <span id="final_dist_mink">N/A</span>
+                  </p>
+                </details>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="canvas-container">
+                <canvas id="minkowskiCanvas"></canvas>
+              </div>
+              <p class="text-xs text-center mt-2 text-slate-500">
+                O contorno representa a forma da "unidade de distância p"
+                centrada em P e passando por Q.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="text-center mt-12 py-6 border-t border-slate-300">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="currentYear_mink"></span> Aplicação Interativa da
+          Dist. de Minkowski. Fins educacionais.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-button");
+        const contentSections = document.querySelectorAll(".content-section");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const targetTab = tab.getAttribute("data-tab");
+            contentSections.forEach((section) => {
+              section.classList.remove("active");
+              if (section.id === targetTab) {
+                section.classList.add("active");
+              }
+            });
+            if (targetTab === "visualizador") {
+              requestAnimationFrame(() => sizeCanvasAndDrawMinkowski());
+            }
+          });
+        });
+
+        document.getElementById("currentYear_mink").textContent =
+          new Date().getFullYear();
+
+        const p1xInput = document.getElementById("p1x_mink");
+        const p1yInput = document.getElementById("p1y_mink");
+        const p2xInput = document.getElementById("p2x_mink");
+        const p2yInput = document.getElementById("p2y_mink");
+        const pParamInput = document.getElementById("p_param_mink");
+
+        const distanceResultEl = document.getElementById(
+          "minkowskiDistanceResult"
+        );
+        const errorEl = document.getElementById("minkowskiError");
+        const termXEl = document.getElementById("termX_mink");
+        const termYEl = document.getElementById("termY_mink");
+        const sumTermsEl = document.getElementById("sum_terms_mink");
+        const finalDistEl = document.getElementById("final_dist_mink");
+
+        const canvas = document.getElementById("minkowskiCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function calculateMinkowskiDistance(x1, y1, x2, y2, p) {
+          const dx_abs = Math.abs(x1 - x2);
+          const dy_abs = Math.abs(y1 - y2);
+
+          if (p >= 100) {
+            const dist = Math.max(dx_abs, dy_abs);
+            termXEl.textContent = "N/A (Chebyshev)";
+            termYEl.textContent = "N/A (Chebyshev)";
+            sumTermsEl.textContent = "N/A (Chebyshev)";
+            finalDistEl.textContent = dist.toFixed(4);
+            return dist;
+          }
+          if (p < 1) {
+            errorEl.textContent =
+              "Parâmetro 'p' deve ser ≥ 1 para uma métrica válida.";
+            return NaN;
+          }
+
+          const termX = Math.pow(dx_abs, p);
+          const termY = Math.pow(dy_abs, p);
+          const sumTerms = termX + termY;
+          const dist = Math.pow(sumTerms, 1 / p);
+
+          termXEl.textContent = termX.toFixed(4);
+          termYEl.textContent = termY.toFixed(4);
+          sumTermsEl.textContent = sumTerms.toFixed(4);
+          finalDistEl.textContent = dist.toFixed(4);
+          return dist;
+        }
+
+        function calculateAndDrawMinkowski() {
+          errorEl.textContent = "";
+          const p1x = parseFloat(p1xInput.value);
+          const p1y = parseFloat(p1yInput.value);
+          const p2x = parseFloat(p2xInput.value);
+          const p2y = parseFloat(p2yInput.value);
+          const p_param = parseFloat(pParamInput.value);
+
+          if (
+            isNaN(p1x) ||
+            isNaN(p1y) ||
+            isNaN(p2x) ||
+            isNaN(p2y) ||
+            isNaN(p_param)
+          ) {
+            errorEl.textContent =
+              "Por favor, insira valores numéricos válidos para todas as coordenadas e para 'p'.";
+            distanceResultEl.textContent = "N/A";
+            clearCanvasMinkowski();
+            return;
+          }
+          if (p_param < 1) {
+            errorEl.textContent = "Parâmetro 'p' deve ser ≥ 1.";
+            distanceResultEl.textContent = "N/A";
+            clearCanvasMinkowski();
+            return;
+          }
+
+          const distance = calculateMinkowskiDistance(
+            p1x,
+            p1y,
+            p2x,
+            p2y,
+            p_param
+          );
+
+          if (isNaN(distance)) {
+            distanceResultEl.textContent = "N/A";
+            clearCanvasMinkowski();
+            return;
+          }
+          distanceResultEl.textContent = distance.toFixed(4);
+          drawVisualsMinkowski(p1x, p1y, p2x, p2y, p_param, distance);
+        }
+
+        function clearCanvasMinkowski() {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+        }
+
+        function drawVisualsMinkowski(
+          p1x,
+          p1y,
+          p2x,
+          p2y,
+          p_param,
+          D_minkowski
+        ) {
+          const width = canvas.width;
+          const height = canvas.height;
+          ctx.clearRect(0, 0, width, height);
+
+          const padding = 40;
+          const usableWidth = width - 2 * padding;
+          const usableHeight = height - 2 * padding;
+
+          const allX = [p1x, p2x, p1x - D_minkowski, p1x + D_minkowski];
+          const allY = [p1y, p2y, p1y - D_minkowski, p1y + D_minkowski];
+
+          let minDataX = Math.min(...allX);
+          let maxDataX = Math.max(...allX);
+          let minDataY = Math.min(...allY);
+          let maxDataY = Math.max(...allY);
+
+          let dataWidth = maxDataX - minDataX;
+          let dataHeight = maxDataY - minDataY;
+
+          if (dataWidth === 0)
+            dataWidth = D_minkowski > 0 ? 2 * D_minkowski : 10;
+          if (dataHeight === 0)
+            dataHeight = D_minkowski > 0 ? 2 * D_minkowski : 10;
+          if (dataWidth < 1) {
+            minDataX -= (1 - dataWidth) / 2;
+            maxDataX += (1 - dataWidth) / 2;
+            dataWidth = 1;
+          }
+          if (dataHeight < 1) {
+            minDataY -= (1 - dataHeight) / 2;
+            maxDataY += (1 - dataHeight) / 2;
+            dataHeight = 1;
+          }
+
+          const scaleX = usableWidth / dataWidth;
+          const scaleY = usableHeight / dataHeight;
+          const scale = Math.min(scaleX, scaleY) * 0.9;
+
+          const toCanvasX = (dataX) =>
+            padding +
+            (dataX - minDataX) * scale +
+            (usableWidth - dataWidth * scale) / 2;
+          const toCanvasY = (dataY) =>
+            padding +
+            (usableHeight - (dataY - minDataY) * scale) -
+            (usableHeight - dataHeight * scale) / 2;
+
+          const originXCanvas = toCanvasX(0);
+          const originYCanvas = toCanvasY(0);
+          ctx.strokeStyle = "#a1a1aa";
+          ctx.lineWidth = 0.5;
+          if (originYCanvas >= padding && originYCanvas <= height - padding) {
+            ctx.beginPath();
+            ctx.moveTo(padding / 2, originYCanvas);
+            ctx.lineTo(width - padding / 2, originYCanvas);
+            ctx.stroke();
+          }
+          if (originXCanvas >= padding && originXCanvas <= width - padding) {
+            ctx.beginPath();
+            ctx.moveTo(originXCanvas, padding / 2);
+            ctx.lineTo(originXCanvas, height - padding / 2);
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = "rgba(13, 148, 136, 0.7)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const numSteps = 200;
+
+          if (p_param >= 100) {
+            const D_cheby = D_minkowski;
+            ctx.moveTo(toCanvasX(p1x - D_cheby), toCanvasY(p1y + D_cheby));
+            ctx.lineTo(toCanvasX(p1x + D_cheby), toCanvasY(p1y + D_cheby));
+            ctx.lineTo(toCanvasX(p1x + D_cheby), toCanvasY(p1y - D_cheby));
+            ctx.lineTo(toCanvasX(p1x - D_cheby), toCanvasY(p1y - D_cheby));
+            ctx.closePath();
+          } else {
+            for (let i = 0; i <= numSteps; i++) {
+              const angle = (i / numSteps) * 2 * Math.PI;
+              const cosA = Math.cos(angle);
+              const sinA = Math.sin(angle);
+
+              let radius_at_angle = D_minkowski;
+              if (D_minkowski > 1e-9) {
+                const norm_p_denom_val =
+                  Math.pow(Math.abs(cosA), p_param) +
+                  Math.pow(Math.abs(sinA), p_param);
+                if (norm_p_denom_val > 1e-9) {
+                  const norm_p_denom = Math.pow(norm_p_denom_val, 1 / p_param);
+                  if (norm_p_denom > 1e-9) {
+                    radius_at_angle = D_minkowski / norm_p_denom;
+                  }
+                }
+              }
+
+              const x_contour = p1x + radius_at_angle * cosA;
+              const y_contour = p1y + radius_at_angle * sinA;
+
+              if (i === 0) {
+                ctx.moveTo(toCanvasX(x_contour), toCanvasY(y_contour));
+              } else {
+                ctx.lineTo(toCanvasX(x_contour), toCanvasY(y_contour));
+              }
+            }
+            ctx.closePath();
+          }
+          ctx.stroke();
+
+          ctx.fillStyle = "#0d9488";
+          ctx.beginPath();
+          ctx.arc(toCanvasX(p1x), toCanvasY(p1y), 5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillText(
+            "P (" + p1x.toFixed(1) + "," + p1y.toFixed(1) + ")",
+            toCanvasX(p1x) + 8,
+            toCanvasY(p1y) - 8
+          );
+
+          ctx.fillStyle = "#db2777";
+          ctx.beginPath();
+          ctx.arc(toCanvasX(p2x), toCanvasY(p2y), 5, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.fillText(
+            "Q (" + p2x.toFixed(1) + "," + p2y.toFixed(1) + ")",
+            toCanvasX(p2x) + 8,
+            toCanvasY(p2y) - 8
+          );
+        }
+
+        function sizeCanvasAndDrawMinkowski() {
+          const container = canvas.parentElement;
+          if (!container) return;
+
+          const newWidth = container.clientWidth;
+          const newHeight = container.clientHeight;
+
+          if (canvas.width !== newWidth || canvas.height !== newHeight) {
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+          }
+          calculateAndDrawMinkowski();
+        }
+
+        const inputs = [p1xInput, p1yInput, p2xInput, p2yInput, pParamInput];
+        inputs.forEach((input) =>
+          input.addEventListener("input", calculateAndDrawMinkowski)
+        );
+
+        window.addEventListener("resize", sizeCanvasAndDrawMinkowski);
+
+        if (
+          document.getElementById("visualizador").classList.contains("active")
+        ) {
+          requestAnimationFrame(() => sizeCanvasAndDrawMinkowski());
+        } else {
+          const p1x_val = parseFloat(p1xInput.value);
+          const p1y_val = parseFloat(p1yInput.value);
+          const p2x_val = parseFloat(p2xInput.value);
+          const p2y_val = parseFloat(p2yInput.value);
+          const p_param_val = parseFloat(pParamInput.value);
+          if (
+            !isNaN(p1x_val) &&
+            !isNaN(p1y_val) &&
+            !isNaN(p2x_val) &&
+            !isNaN(p2y_val) &&
+            !isNaN(p_param_val) &&
+            p_param_val >= 1
+          ) {
+            const distance = calculateMinkowskiDistance(
+              p1x_val,
+              p1y_val,
+              p2x_val,
+              p2y_val,
+              p_param_val
+            );
+            if (!isNaN(distance)) {
+              distanceResultEl.textContent = distance.toFixed(4);
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
