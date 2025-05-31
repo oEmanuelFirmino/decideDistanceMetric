@@ -17,19 +17,8 @@
       }
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-      .tab-button {
-        transition: all 0.3s ease;
-      }
-      .tab-button.active {
-        border-color: #2563eb; /* blue-600 */
-        color: #2563eb;
-        font-weight: 600;
-      }
       .content-section {
-        display: none;
-      }
-      .content-section.active {
-        display: block;
+        display: block; margin-bottom: 2rem;
       }
       .formula {
         font-family: "Courier New", Courier, monospace;
@@ -147,43 +136,10 @@
         </h1>
       </header>
 
-      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
-        <button
-          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
-          data-tab="definicao"
-        >
-          Definição
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
-          data-tab="formula"
-        >
-          Fórmula e Termos
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
-          data-tab="propriedades"
-        >
-          Propriedades
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
-          data-tab="aplicacoes"
-        >
-          Aplicações Práticas
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 rounded-t-md"
-          data-tab="visualizador"
-        >
-          Visualizador Interativo
-        </button>
-      </nav>
-
       <main>
         <section
           id="definicao"
-          class="content-section active bg-white p-6 rounded-lg shadow-md"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
         >
           <h2 class="text-2xl font-semibold text-blue-600 mb-4">
             O que é a Distância de Dice / Perda de Dice?
@@ -566,24 +522,6 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const tabs = document.querySelectorAll(".tab-button");
-        const contentSections = document.querySelectorAll(".content-section");
-
-        tabs.forEach((tab) => {
-          tab.addEventListener("click", () => {
-            tabs.forEach((t) => t.classList.remove("active"));
-            tab.classList.add("active");
-
-            const targetTab = tab.getAttribute("data-tab");
-            contentSections.forEach((section) => {
-              section.classList.remove("active");
-              if (section.id === targetTab) {
-                section.classList.add("active");
-              }
-            });
-          });
-        });
-
         document.getElementById("currentYearDice").textContent =
           new Date().getFullYear();
 

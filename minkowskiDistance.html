@@ -18,19 +18,8 @@
       }
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-      .tab-button {
-        transition: all 0.3s ease;
-      }
-      .tab-button.active {
-        border-color: #0d9488; /* teal-600 */
-        color: #0d9488;
-        font-weight: 600;
-      }
       .content-section {
-        display: none;
-      }
-      .content-section.active {
-        display: block;
+        display: block; margin-bottom: 2rem;
       }
       .formula {
         font-family: "Consolas", "Courier New", Courier, monospace;
@@ -161,49 +150,10 @@
         </h1>
       </header>
 
-      <nav class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
-        <button
-          class="tab-button active py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="definicao"
-        >
-          Definição
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="formula"
-        >
-          Fórmula
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="casos_especiais"
-        >
-          Casos Especiais
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="parametro_p"
-        >
-          Parâmetro 'p'
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="aplicacoes"
-        >
-          Aplicações Práticas
-        </button>
-        <button
-          class="tab-button py-2 px-4 border-b-2 border-transparent hover:border-teal-500 hover:text-teal-600 rounded-t-md"
-          data-tab="visualizador"
-        >
-          Visualizador Interativo
-        </button>
-      </nav>
-
       <main>
         <section
           id="definicao"
-          class="content-section active bg-white p-6 rounded-lg shadow-md"
+          class="content-section bg-white p-6 rounded-lg shadow-md"
         >
           <h2 class="text-2xl font-semibold text-teal-600 mb-4">
             O que é a Distância de Minkowski?
@@ -621,26 +571,6 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const tabs = document.querySelectorAll(".tab-button");
-        const contentSections = document.querySelectorAll(".content-section");
-
-        tabs.forEach((tab) => {
-          tab.addEventListener("click", () => {
-            tabs.forEach((t) => t.classList.remove("active"));
-            tab.classList.add("active");
-            const targetTab = tab.getAttribute("data-tab");
-            contentSections.forEach((section) => {
-              section.classList.remove("active");
-              if (section.id === targetTab) {
-                section.classList.add("active");
-              }
-            });
-            if (targetTab === "visualizador") {
-              requestAnimationFrame(() => sizeCanvasAndDrawMinkowski());
-            }
-          });
-        });
-
         document.getElementById("currentYear_mink").textContent =
           new Date().getFullYear();
 
@@ -901,12 +831,11 @@
 
         window.addEventListener("resize", sizeCanvasAndDrawMinkowski);
 
-        if (
-          document.getElementById("visualizador").classList.contains("active")
-        ) {
-          requestAnimationFrame(() => sizeCanvasAndDrawMinkowski());
-        } else {
-          const p1x_val = parseFloat(p1xInput.value);
+        // Ensure canvas is drawn on initial load as sections are now always visible
+        requestAnimationFrame(() => sizeCanvasAndDrawMinkowski());
+        // The following block is not strictly necessary anymore as the visualizador section is always "active"
+        // However, keeping it doesn't harm, and ensures the initial calculation if needed for some reason.
+        const p1x_val = parseFloat(p1xInput.value);
           const p1y_val = parseFloat(p1yInput.value);
           const p2x_val = parseFloat(p2xInput.value);
           const p2y_val = parseFloat(p2yInput.value);
